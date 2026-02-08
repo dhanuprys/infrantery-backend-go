@@ -38,6 +38,11 @@ const (
 	ErrCodeInvalidNodeData  = "INVALID_NODE_DATA"
 	ErrCodeInvalidNodeID    = "INVALID_NODE_ID"
 
+	// Vault errors
+	ErrCodeVaultItemNotFound    = "VAULT_ITEM_NOT_FOUND"
+	ErrCodeVaultAccessDenied    = "VAULT_ACCESS_DENIED"
+	ErrCodeInvalidVaultItemData = "INVALID_VAULT_ITEM_DATA"
+
 	// Validation errors
 	ErrCodeValidationFailed = "VALIDATION_FAILED"
 	ErrCodeInvalidRequest   = "INVALID_REQUEST"

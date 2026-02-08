@@ -67,3 +67,12 @@ type NodeRepository interface {
 	Delete(ctx context.Context, id primitive.ObjectID) error
 	DeleteByDiagramID(ctx context.Context, diagramID primitive.ObjectID) error
 }
+
+type NodeVaultRepository interface {
+	Create(ctx context.Context, vault *domain.NodeVault) error
+	FindByID(ctx context.Context, id primitive.ObjectID) (*domain.NodeVault, error)
+	FindByNodeID(ctx context.Context, nodeID primitive.ObjectID) ([]*domain.NodeVault, error)
+	Update(ctx context.Context, vault *domain.NodeVault) error
+	Delete(ctx context.Context, id primitive.ObjectID) error
+	DeleteByNodeID(ctx context.Context, nodeID primitive.ObjectID) error
+}
