@@ -1,10 +1,13 @@
 package domain
 
-// Node is handled on frontend mostly, but if we need a schema:
+import "go.mongodb.org/mongo-driver/bson/primitive"
+
+// Node represents a node in a diagram with encrypted extended data
 type Node struct {
-	ID                       string `bson:"id" json:"id"` // Frontend generate ID usually
-	EncryptedReadme          string `bson:"encrypted_readme" json:"encrypted_readme"`
-	EncryptedReadmeSignature string `bson:"encrypted_readme_signature" json:"encrypted_readme_signature"`
-	EncryptedDict            string `bson:"encrypted_dict" json:"encrypted_dict"`
-	EncryptedDictSignature   string `bson:"encrypted_dict_signature" json:"encrypted_dict_signature"`
+	ID                       primitive.ObjectID `bson:"_id" json:"id"`
+	DiagramID                primitive.ObjectID `bson:"diagram_id" json:"diagram_id"`
+	EncryptedReadme          string             `bson:"encrypted_readme" json:"encrypted_readme"`
+	EncryptedReadmeSignature string             `bson:"encrypted_readme_signature" json:"encrypted_readme_signature"`
+	EncryptedDict            string             `bson:"encrypted_dict" json:"encrypted_dict"`
+	EncryptedDictSignature   string             `bson:"encrypted_dict_signature" json:"encrypted_dict_signature"`
 }

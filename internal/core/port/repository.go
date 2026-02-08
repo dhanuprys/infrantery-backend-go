@@ -58,3 +58,12 @@ type DiagramRepository interface {
 	Delete(ctx context.Context, id primitive.ObjectID) error
 	DeleteByProjectID(ctx context.Context, projectID primitive.ObjectID) error
 }
+
+type NodeRepository interface {
+	Create(ctx context.Context, node *domain.Node) error
+	FindByID(ctx context.Context, id primitive.ObjectID) (*domain.Node, error)
+	FindByDiagramID(ctx context.Context, diagramID primitive.ObjectID, offset, limit int) ([]*domain.Node, int64, error)
+	Update(ctx context.Context, node *domain.Node) error
+	Delete(ctx context.Context, id primitive.ObjectID) error
+	DeleteByDiagramID(ctx context.Context, diagramID primitive.ObjectID) error
+}

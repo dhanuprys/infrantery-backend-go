@@ -32,6 +32,12 @@ const (
 	ErrCodeDiagramAccessDenied = "DIAGRAM_ACCESS_DENIED"
 	ErrCodeInvalidDiagramData  = "INVALID_DIAGRAM_DATA"
 
+	// Node errors
+	ErrCodeNodeNotFound     = "NODE_NOT_FOUND"
+	ErrCodeNodeAccessDenied = "NODE_ACCESS_DENIED"
+	ErrCodeInvalidNodeData  = "INVALID_NODE_DATA"
+	ErrCodeInvalidNodeID    = "INVALID_NODE_ID"
+
 	// Validation errors
 	ErrCodeValidationFailed = "VALIDATION_FAILED"
 	ErrCodeInvalidRequest   = "INVALID_REQUEST"
@@ -71,13 +77,19 @@ var ErrorMessages = map[string]string{
 	ErrCodeDiagramNotFound:     "Diagram not found",
 	ErrCodeDiagramAccessDenied: "Access denied to this diagram",
 	ErrCodeInvalidDiagramData:  "Invalid diagram data provided",
-	ErrCodeValidationFailed:    "Validation failed",
-	ErrCodeInvalidRequest:      "Invalid request body",
-	ErrCodeNotFound:            "Resource not found",
-	ErrCodeAlreadyExists:       "Resource already exists",
-	ErrCodeForbidden:           "Access forbidden",
-	ErrCodeInternalError:       "Internal server error",
-	ErrCodeDatabaseError:       "Database operation failed",
+
+	ErrCodeNodeNotFound:     "Node not found",
+	ErrCodeNodeAccessDenied: "Access denied to this node",
+	ErrCodeInvalidNodeData:  "Invalid node data provided",
+	ErrCodeInvalidNodeID:    "Invalid node ID format",
+
+	ErrCodeValidationFailed: "Validation failed",
+	ErrCodeInvalidRequest:   "Invalid request body",
+	ErrCodeNotFound:         "Resource not found",
+	ErrCodeAlreadyExists:    "Resource already exists",
+	ErrCodeForbidden:        "Access forbidden",
+	ErrCodeInternalError:    "Internal server error",
+	ErrCodeDatabaseError:    "Database operation failed",
 }
 
 // NewErrorResponse creates a new error response with code and message from dictionary

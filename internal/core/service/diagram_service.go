@@ -19,17 +19,20 @@ type DiagramService struct {
 	diagramRepo port.DiagramRepository
 	memberRepo  port.ProjectMemberRepository
 	projectRepo port.ProjectRepository
+	nodeRepo    port.NodeRepository
 }
 
 func NewDiagramService(
 	diagramRepo port.DiagramRepository,
 	memberRepo port.ProjectMemberRepository,
 	projectRepo port.ProjectRepository,
+	nodeRepo port.NodeRepository,
 ) *DiagramService {
 	return &DiagramService{
 		diagramRepo: diagramRepo,
 		memberRepo:  memberRepo,
 		projectRepo: projectRepo,
+		nodeRepo:    nodeRepo,
 	}
 }
 
@@ -155,6 +158,11 @@ func (s *DiagramService) DeleteDiagram(
 
 	// Check permission
 	if err := s.hasPermission(ctx, diagram.ProjectID, userID, domain.PermissionEditDiagram); err != nil {
+		return err
+	}
+
+	// Delete all nodes associated with this diagram
+	if err := s.nodeRepo.DeleteByDiagramID(ctx, diagramID); err != nil {
 		return err
 	}
 
