@@ -1,0 +1,102 @@
+package dto
+
+// Error codes for the application
+const (
+	// Authentication errors
+	ErrCodeInvalidCredentials = "INVALID_CREDENTIALS"
+	ErrCodeUserAlreadyExists  = "USER_ALREADY_EXISTS"
+	ErrCodeInvalidToken       = "INVALID_TOKEN"
+	ErrCodeExpiredToken       = "EXPIRED_TOKEN"
+	ErrCodeUnauthorized       = "UNAUTHORIZED"
+	// Profile errors
+	ErrCodeEmailAlreadyExists    = "EMAIL_ALREADY_EXISTS"
+	ErrCodeUsernameAlreadyExists = "USERNAME_ALREADY_EXISTS"
+	ErrCodeCurrentPasswordWrong  = "CURRENT_PASSWORD_WRONG"
+	ErrCodeSamePassword          = "SAME_PASSWORD"
+
+	// Project errors
+	ErrCodeProjectNotFound        = "PROJECT_NOT_FOUND"
+	ErrCodeProjectAccessDenied    = "PROJECT_ACCESS_DENIED"
+	ErrCodeInsufficientPermission = "INSUFFICIENT_PERMISSION"
+	ErrCodeMemberNotFound         = "MEMBER_NOT_FOUND"
+	ErrCodeMemberAlreadyExists    = "MEMBER_ALREADY_EXISTS"
+	ErrCodeCannotRemoveOwner      = "CANNOT_REMOVE_OWNER"
+
+	// Note errors
+	ErrCodeNoteNotFound     = "NOTE_NOT_FOUND"
+	ErrCodeNoteAccessDenied = "NOTE_ACCESS_DENIED"
+	ErrCodeInvalidNoteData  = "INVALID_NOTE_DATA"
+
+	// Diagram errors
+	ErrCodeDiagramNotFound     = "DIAGRAM_NOT_FOUND"
+	ErrCodeDiagramAccessDenied = "DIAGRAM_ACCESS_DENIED"
+	ErrCodeInvalidDiagramData  = "INVALID_DIAGRAM_DATA"
+
+	// Validation errors
+	ErrCodeValidationFailed = "VALIDATION_FAILED"
+	ErrCodeInvalidRequest   = "INVALID_REQUEST"
+
+	// Resource errors
+	ErrCodeNotFound      = "RESOURCE_NOT_FOUND"
+	ErrCodeAlreadyExists = "RESOURCE_ALREADY_EXISTS"
+	ErrCodeForbidden     = "FORBIDDEN"
+
+	// Server errors
+	ErrCodeInternalError = "INTERNAL_SERVER_ERROR"
+	ErrCodeDatabaseError = "DATABASE_ERROR"
+)
+
+// Error messages corresponding to error codes
+var ErrorMessages = map[string]string{
+	ErrCodeInvalidCredentials:     "Invalid email/username or password",
+	ErrCodeUserAlreadyExists:      "User with this email or username already exists",
+	ErrCodeInvalidToken:           "Invalid or expired token",
+	ErrCodeExpiredToken:           "Token has expired",
+	ErrCodeUnauthorized:           "Authorization required",
+	ErrCodeEmailAlreadyExists:     "Email address is already in use",
+	ErrCodeUsernameAlreadyExists:  "Username is already taken",
+	ErrCodeCurrentPasswordWrong:   "Current password is incorrect",
+	ErrCodeSamePassword:           "New password must be different from current password",
+	ErrCodeProjectNotFound:        "Project not found",
+	ErrCodeProjectAccessDenied:    "Access denied to this project",
+	ErrCodeInsufficientPermission: "Insufficient permission to perform this action",
+	ErrCodeMemberNotFound:         "Member not found",
+	ErrCodeMemberAlreadyExists:    "Member already exists in this project",
+	ErrCodeCannotRemoveOwner:      "Cannot remove the last owner from project",
+
+	ErrCodeNoteNotFound:     "Note not found",
+	ErrCodeNoteAccessDenied: "Access denied to this note",
+	ErrCodeInvalidNoteData:  "Invalid note data provided",
+
+	ErrCodeDiagramNotFound:     "Diagram not found",
+	ErrCodeDiagramAccessDenied: "Access denied to this diagram",
+	ErrCodeInvalidDiagramData:  "Invalid diagram data provided",
+	ErrCodeValidationFailed:    "Validation failed",
+	ErrCodeInvalidRequest:      "Invalid request body",
+	ErrCodeNotFound:            "Resource not found",
+	ErrCodeAlreadyExists:       "Resource already exists",
+	ErrCodeForbidden:           "Access forbidden",
+	ErrCodeInternalError:       "Internal server error",
+	ErrCodeDatabaseError:       "Database operation failed",
+}
+
+// NewErrorResponse creates a new error response with code and message from dictionary
+func NewErrorResponse(code string, customMessage ...string) *ErrorResponse {
+	message := ErrorMessages[code]
+	if len(customMessage) > 0 && customMessage[0] != "" {
+		message = customMessage[0]
+	}
+	return &ErrorResponse{
+		Code:    code,
+		Message: message,
+	}
+}
+
+// NewValidationErrorResponse creates an error response for validation errors
+func NewValidationErrorResponse(fields *[]map[string]string) *ErrorResponse {
+	return &ErrorResponse{
+		Code:    ErrCodeValidationFailed,
+		Message: ErrorMessages[ErrCodeValidationFailed],
+		Fields:  fields,
+	}
+}

@@ -1,0 +1,77 @@
+# --- Binaries & Executables ---
+# Compiled binaries
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+# Main application binary (assumes your binary matches your folder name or 'main')
+bin/
+out/
+dist/
+# Specifically for your Gin app binary
+app
+main
+server
+
+# --- Go Dependencies & Tooling ---
+# Vendor directory is usually ignored unless you strictly follow vendoring
+# vendor/
+
+# Test binary and coverage files
+*.test
+*.out
+coverage.txt
+profile.out
+
+# --- Environment & Secrets ---
+# Crucial for Gin apps using .env for config
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+
+# --- Framework/Gin Specific ---
+# If you use air for live reloading (highly recommended for Gin)
+tmp/
+
+# If you use swag for API documentation
+docs/docs.go
+docs/swagger.json
+docs/swagger.yaml
+
+# --- Editors & IDEs ---
+# VS Code
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.code-workspace
+
+# JetBrains (GoLand/IntelliJ)
+.idea/
+
+# Vim/Emacs
+*~
+*.swp
+*.swo
+.netrwhist
+
+# --- Infrastructure & Containers ---
+# Docker-related (if you have local-only docker-compose overrides)
+docker-compose.override.yml
+
+# Terraform local state
+.terraform/
+*.tfstate
+*.tfstate.backup
+
+# --- OS Specific ---
+.DS_Store
+.DS_Store?
+._*
+Thumbs.db
+ehthumbs.db
+desktop.ini
