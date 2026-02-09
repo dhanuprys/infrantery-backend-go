@@ -58,7 +58,7 @@ func (h *ProfileHandler) GetProfile(c *gin.Context) {
 		return
 	}
 
-	response := dto.ToUserProfileResponse(user.ID, user.Name, user.Username, user.Email)
+	response := dto.ToUserProfileResponse(user)
 	c.JSON(http.StatusOK, dto.NewAPIResponse(response, nil))
 }
 
@@ -132,7 +132,7 @@ func (h *ProfileHandler) UpdateProfile(c *gin.Context) {
 		Str("user_id", logger.SanitizeUserID(userID.Hex())).
 		Msg("Profile updated successfully")
 
-	response := dto.ToUserProfileResponse(user.ID, user.Name, user.Username, user.Email)
+	response := dto.ToUserProfileResponse(user)
 	c.JSON(http.StatusOK, dto.NewAPIResponse(response, nil))
 }
 

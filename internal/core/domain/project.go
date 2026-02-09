@@ -1,6 +1,10 @@
 package domain
 
-import "go.mongodb.org/mongo-driver/bson/primitive"
+import (
+	"time"
+
+	"go.mongodb.org/mongo-driver/bson/primitive"
+)
 
 type Project struct {
 	ID          primitive.ObjectID `bson:"_id,omitempty" json:"id,omitempty"`
@@ -16,4 +20,7 @@ type Project struct {
 	// encrypted + "<delimiter>" + salt + "<delimiter" + iv
 	SecretSigningPrivateKey string `bson:"secret_signing_private_key" json:"secret_signing_private_key"`
 	SigningPublicKey        string `bson:"signing_public_key" json:"signing_public_key"`
+
+	CreatedAt time.Time `bson:"created_at,omitempty" json:"created_at"`
+	UpdatedAt time.Time `bson:"updated_at,omitempty" json:"updated_at"`
 }

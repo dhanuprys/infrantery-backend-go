@@ -57,7 +57,8 @@ func (h *NodeVaultHandler) CreateVaultItem(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusCreated, dto.NewAPIResponse(vaultItem, nil))
+	response := dto.ToNodeVaultResponse(vaultItem)
+	c.JSON(http.StatusCreated, dto.NewAPIResponse(response, nil))
 }
 
 func (h *NodeVaultHandler) ListVaultItems(c *gin.Context) {
@@ -84,7 +85,12 @@ func (h *NodeVaultHandler) ListVaultItems(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, dto.NewAPIResponse(items, nil))
+	responses := make([]dto.NodeVaultResponse, 0, len(items))
+	for _, item := range items {
+		responses = append(responses, dto.ToNodeVaultResponse(item))
+	}
+
+	c.JSON(http.StatusOK, dto.NewAPIResponse(responses, nil))
 }
 
 func (h *NodeVaultHandler) UpdateVaultItem(c *gin.Context) {
@@ -118,7 +124,8 @@ func (h *NodeVaultHandler) UpdateVaultItem(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, dto.NewAPIResponse(item, nil))
+	response := dto.ToNodeVaultResponse(item)
+	c.JSON(http.StatusOK, dto.NewAPIResponse(response, nil))
 }
 
 func (h *NodeVaultHandler) DeleteVaultItem(c *gin.Context) {

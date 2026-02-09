@@ -1,6 +1,8 @@
 package domain
 
 import (
+	"time"
+
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -12,4 +14,7 @@ type NodeVault struct {
 	Type                    string             `bson:"type" json:"type"`
 	EncryptedValue          *string            `bson:"encrypted_value,omitempty" json:"encrypted_value,omitempty"`
 	EncryptedValueSignature *string            `bson:"encrypted_value_signature,omitempty" json:"encrypted_value_signature,omitempty"`
+
+	CreatedAt time.Time `bson:"created_at,omitempty" json:"created_at"`
+	UpdatedAt time.Time `bson:"updated_at,omitempty" json:"updated_at"`
 }

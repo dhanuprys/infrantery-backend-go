@@ -98,7 +98,7 @@ func (h *NoteHandler) CreateNote(c *gin.Context) {
 		Msg("Note created")
 
 	// TODO: Get timestamps from mgod
-	response := dto.ToNoteResponse(note, note.ID.Timestamp(), note.ID.Timestamp())
+	response := dto.ToNoteResponse(note)
 	c.JSON(http.StatusCreated, dto.NewAPIResponse(response, nil))
 }
 
@@ -155,7 +155,7 @@ func (h *NoteHandler) ListNotes(c *gin.Context) {
 	responses := make([]dto.NoteResponse, 0, len(notes))
 	for _, note := range notes {
 		// TODO: Get actual timestamps from mgod
-		responses = append(responses, dto.ToNoteResponse(note, note.ID.Timestamp(), note.ID.Timestamp()))
+		responses = append(responses, dto.ToNoteResponse(note))
 	}
 
 	paginationMeta := dto.NewPaginationMeta(params, totalCount)
@@ -212,7 +212,7 @@ func (h *NoteHandler) GetNote(c *gin.Context) {
 	}
 
 	// TODO: Get actual timestamps from mgod
-	response := dto.ToNoteResponse(note, note.ID.Timestamp(), note.ID.Timestamp())
+	response := dto.ToNoteResponse(note)
 	c.JSON(http.StatusOK, dto.NewAPIResponse(response, nil))
 }
 
@@ -298,7 +298,7 @@ func (h *NoteHandler) UpdateNote(c *gin.Context) {
 		Msg("Note updated")
 
 	// TODO: Get actual timestamps from mgod
-	response := dto.ToNoteResponse(note, note.ID.Timestamp(), note.ID.Timestamp())
+	response := dto.ToNoteResponse(note)
 	c.JSON(http.StatusOK, dto.NewAPIResponse(response, nil))
 }
 

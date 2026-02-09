@@ -1,6 +1,8 @@
 package domain
 
 import (
+	"time"
+
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -12,4 +14,7 @@ type Diagram struct {
 	Description            string              `bson:"description" json:"description"`
 	EncryptedData          *string             `bson:"encrypted_data,omitempty" json:"encrypted_data,omitempty"`
 	EncryptedDataSignature string              `bson:"encrypted_data_signature" json:"encrypted_data_signature"`
+
+	CreatedAt time.Time `bson:"created_at,omitempty" json:"created_at"`
+	UpdatedAt time.Time `bson:"updated_at,omitempty" json:"updated_at"`
 }

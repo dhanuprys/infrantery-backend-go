@@ -1,5 +1,11 @@
 package dto
 
+import (
+	"time"
+
+	"github.com/dhanuprys/infrantery-backend-go/internal/core/domain"
+)
+
 type CreateNodeVaultRequest struct {
 	Type                    string `json:"type" validate:"required"`
 	EncryptedValue          string `json:"encrypted_value" validate:"required"`
@@ -20,4 +26,27 @@ type NodeVaultResponse struct {
 	EncryptedValueSignature string `json:"encrypted_value_signature,omitempty"`
 	CreatedAt               string `json:"created_at"`
 	UpdatedAt               string `json:"updated_at"`
+}
+
+func ToNodeVaultResponse(vault *domain.NodeVault) NodeVaultResponse {
+	return NodeVaultResponse{
+		ID:        vault.ID.Hex(),
+		NodeID:    vault.NodeId.Hex(),
+		ProjectID: vault.ProjectId.Hex(),
+		Type:      vault.Type,
+		EncryptedValue: func() string {
+			if vault.EncryptedValue != nil {
+				return *vault.EncryptedValue
+			}
+			return ""
+		}(),
+		EncryptedValueSignature: func() string {
+			if vault.EncryptedValueSignature != nil {
+				return *vault.EncryptedValueSignature
+			}
+			return ""
+		}(),
+		CreatedAt: vault.CreatedAt.Format(time.RFC3339),
+		UpdatedAt: vault.UpdatedAt.Format(time.RFC3339),
+	}
 }

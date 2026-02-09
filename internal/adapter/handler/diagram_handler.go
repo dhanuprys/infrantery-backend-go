@@ -111,7 +111,7 @@ func (h *DiagramHandler) CreateDiagram(c *gin.Context) {
 		Msg("Diagram created")
 
 	// TODO: Get timestamps from mgod
-	response := dto.ToDiagramResponse(diagram, diagram.ID.Timestamp(), diagram.ID.Timestamp())
+	response := dto.ToDiagramResponse(diagram)
 	c.JSON(http.StatusCreated, dto.NewAPIResponse(response, nil))
 }
 
@@ -168,7 +168,7 @@ func (h *DiagramHandler) ListDiagrams(c *gin.Context) {
 	responses := make([]dto.DiagramResponse, 0, len(diagrams))
 	for _, diagram := range diagrams {
 		// TODO: Get actual timestamps from mgod
-		responses = append(responses, dto.ToDiagramResponse(diagram, diagram.ID.Timestamp(), diagram.ID.Timestamp()))
+		responses = append(responses, dto.ToDiagramResponse(diagram))
 	}
 
 	paginationMeta := dto.NewPaginationMeta(params, totalCount)
@@ -225,7 +225,7 @@ func (h *DiagramHandler) GetDiagram(c *gin.Context) {
 	}
 
 	// TODO: Get actual timestamps from mgod
-	response := dto.ToDiagramResponse(diagram, diagram.ID.Timestamp(), diagram.ID.Timestamp())
+	response := dto.ToDiagramResponse(diagram)
 	c.JSON(http.StatusOK, dto.NewAPIResponse(response, nil))
 }
 
@@ -311,7 +311,7 @@ func (h *DiagramHandler) UpdateDiagram(c *gin.Context) {
 		Msg("Diagram updated")
 
 	// TODO: Get actual timestamps from mgod
-	response := dto.ToDiagramResponse(diagram, diagram.ID.Timestamp(), diagram.ID.Timestamp())
+	response := dto.ToDiagramResponse(diagram)
 	c.JSON(http.StatusOK, dto.NewAPIResponse(response, nil))
 }
 

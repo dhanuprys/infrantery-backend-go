@@ -19,7 +19,7 @@ type NoteResponse struct {
 }
 
 // ToNoteResponse converts a domain Note to NoteResponse
-func ToNoteResponse(note *domain.Note, createdAt, updatedAt time.Time) NoteResponse {
+func ToNoteResponse(note *domain.Note) NoteResponse {
 	return NoteResponse{
 		ID:                        note.ID.Hex(),
 		ProjectID:                 note.ProjectID.Hex(),
@@ -27,7 +27,7 @@ func ToNoteResponse(note *domain.Note, createdAt, updatedAt time.Time) NoteRespo
 		FileType:                  note.FileType,
 		EncryptedContent:          note.EncryptedContent,
 		EncryptedContentSignature: note.EncryptedContentSignature,
-		CreatedAt:                 createdAt.Format(time.RFC3339),
-		UpdatedAt:                 updatedAt.Format(time.RFC3339),
+		CreatedAt:                 note.CreatedAt.Format(time.RFC3339),
+		UpdatedAt:                 note.UpdatedAt.Format(time.RFC3339),
 	}
 }

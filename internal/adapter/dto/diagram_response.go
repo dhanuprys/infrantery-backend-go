@@ -20,7 +20,7 @@ type DiagramResponse struct {
 }
 
 // ToDiagramResponse converts a domain Diagram to DiagramResponse
-func ToDiagramResponse(diagram *domain.Diagram, createdAt, updatedAt time.Time) DiagramResponse {
+func ToDiagramResponse(diagram *domain.Diagram) DiagramResponse {
 	var parentID *string
 	if diagram.ParentDiagramID != nil {
 		hexID := diagram.ParentDiagramID.Hex()
@@ -35,7 +35,7 @@ func ToDiagramResponse(diagram *domain.Diagram, createdAt, updatedAt time.Time) 
 		Description:            diagram.Description,
 		EncryptedData:          diagram.EncryptedData,
 		EncryptedDataSignature: diagram.EncryptedDataSignature,
-		CreatedAt:              createdAt.Format(time.RFC3339),
-		UpdatedAt:              updatedAt.Format(time.RFC3339),
+		CreatedAt:              diagram.CreatedAt.Format(time.RFC3339),
+		UpdatedAt:              diagram.UpdatedAt.Format(time.RFC3339),
 	}
 }

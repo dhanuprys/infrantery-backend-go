@@ -18,7 +18,7 @@ type projectMemberRepository struct {
 func NewProjectMemberRepository(collectionName string) (port.ProjectMemberRepository, error) {
 	opts := schemaopt.SchemaOptions{
 		Collection: collectionName,
-		Timestamps: false,
+		Timestamps: true,
 	}
 	model, err := mgod.NewEntityMongoModel(domain.ProjectMember{}, opts)
 	if err != nil {

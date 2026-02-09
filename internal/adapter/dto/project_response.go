@@ -1,6 +1,8 @@
 package dto
 
 import (
+	"time"
+
 	"github.com/dhanuprys/infrantery-backend-go/internal/core/domain"
 )
 
@@ -9,6 +11,8 @@ type ProjectResponse struct {
 	ID          string `json:"id"`
 	Name        string `json:"name"`
 	Description string `json:"description"`
+	CreatedAt   string `json:"created_at"`
+	UpdatedAt   string `json:"updated_at"`
 }
 
 // ProjectDetailResponse includes user's permissions
@@ -22,6 +26,8 @@ type ProjectDetailResponse struct {
 	SigningPublicKey           string   `json:"signing_public_key"`
 	Role                       string   `json:"role"`
 	Permissions                []string `json:"permissions"`
+	CreatedAt                  string   `json:"created_at"`
+	UpdatedAt                  string   `json:"updated_at"`
 }
 
 // ProjectMemberResponse represents a project member
@@ -31,6 +37,8 @@ type ProjectMemberResponse struct {
 	UserEmail   string   `json:"user_email"`
 	Role        string   `json:"role"`
 	Permissions []string `json:"permissions"`
+	CreatedAt   string   `json:"created_at"`
+	UpdatedAt   string   `json:"updated_at"`
 }
 
 // ToProjectResponse converts a project to basic response
@@ -39,6 +47,8 @@ func ToProjectResponse(project *domain.Project) ProjectResponse {
 		ID:          project.ID.Hex(),
 		Name:        project.Name,
 		Description: project.Description,
+		CreatedAt:   project.CreatedAt.Format(time.RFC3339),
+		UpdatedAt:   project.UpdatedAt.Format(time.RFC3339),
 	}
 }
 
@@ -54,6 +64,8 @@ func ToProjectDetailResponse(project *domain.Project, member *domain.ProjectMemb
 		SigningPublicKey:           project.SigningPublicKey,
 		Role:                       member.Role,
 		Permissions:                member.Permissions,
+		CreatedAt:                  project.CreatedAt.Format(time.RFC3339),
+		UpdatedAt:                  project.UpdatedAt.Format(time.RFC3339),
 	}
 }
 
@@ -65,5 +77,7 @@ func ToProjectMemberResponse(member *domain.ProjectMember, user *domain.User) Pr
 		UserEmail:   user.Email,
 		Role:        member.Role,
 		Permissions: member.Permissions,
+		CreatedAt:   member.CreatedAt.Format(time.RFC3339),
+		UpdatedAt:   member.UpdatedAt.Format(time.RFC3339),
 	}
 }

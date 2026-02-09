@@ -1,6 +1,10 @@
 package dto
 
-import "github.com/dhanuprys/infrantery-backend-go/internal/core/domain"
+import (
+	"time"
+
+	"github.com/dhanuprys/infrantery-backend-go/internal/core/domain"
+)
 
 type NodeResponse struct {
 	ID                       string `json:"id"`
@@ -9,6 +13,8 @@ type NodeResponse struct {
 	EncryptedReadmeSignature string `json:"encrypted_readme_signature,omitempty"`
 	EncryptedDict            string `json:"encrypted_dict,omitempty"`
 	EncryptedDictSignature   string `json:"encrypted_dict_signature,omitempty"`
+	CreatedAt                string `json:"created_at"`
+	UpdatedAt                string `json:"updated_at"`
 }
 
 func ToNodeResponse(node *domain.Node) NodeResponse {
@@ -19,5 +25,7 @@ func ToNodeResponse(node *domain.Node) NodeResponse {
 		EncryptedReadmeSignature: node.EncryptedReadmeSignature,
 		EncryptedDict:            node.EncryptedDict,
 		EncryptedDictSignature:   node.EncryptedDictSignature,
+		CreatedAt:                node.CreatedAt.Format(time.RFC3339),
+		UpdatedAt:                node.UpdatedAt.Format(time.RFC3339),
 	}
 }
