@@ -2,6 +2,9 @@ package dto
 
 // Error codes for the application
 const (
+	// Page Not Found errors
+	ErrCodePageNotFound = "PAGE_NOT_FOUND"
+
 	// Authentication errors
 	ErrCodeInvalidCredentials = "INVALID_CREDENTIALS"
 	ErrCodeUserAlreadyExists  = "USER_ALREADY_EXISTS"
@@ -59,6 +62,8 @@ const (
 
 // Error messages corresponding to error codes
 var ErrorMessages = map[string]string{
+	ErrCodePageNotFound: "Page not found",
+
 	ErrCodeInvalidCredentials:     "Invalid email/username or password",
 	ErrCodeUserAlreadyExists:      "User with this email or username already exists",
 	ErrCodeInvalidToken:           "Invalid or expired token",

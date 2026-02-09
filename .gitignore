@@ -10,9 +10,9 @@ bin/
 out/
 dist/
 # Specifically for your Gin app binary
-app
-main
-server
+/app
+/main
+/server
 
 # --- Go Dependencies & Tooling ---
 # Vendor directory is usually ignored unless you strictly follow vendoring
