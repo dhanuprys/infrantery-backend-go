@@ -67,15 +67,17 @@ func (s *ProjectService) CreateProject(
 	ctx context.Context,
 	userID primitive.ObjectID,
 	name, description string,
-	encryptionSalt, encryptedPrivateKey, encryptionPublicKey string,
+	secretEncryptionPrivateKey, encryptionPublicKey string,
+	secretSigningPrivateKey, signingPublicKey string,
 ) (*domain.Project, error) {
 	project := &domain.Project{
-		ID:                  primitive.NewObjectID(),
-		Name:                name,
-		Description:         description,
-		EncryptionSalt:      encryptionSalt,
-		EncryptedPrivateKey: encryptedPrivateKey,
-		EncryptionPublicKey: encryptionPublicKey,
+		ID:                         primitive.NewObjectID(),
+		Name:                       name,
+		Description:                description,
+		SecretEncryptionPrivateKey: secretEncryptionPrivateKey,
+		EncryptionPublicKey:        encryptionPublicKey,
+		SecretSigningPrivateKey:    secretSigningPrivateKey,
+		SigningPublicKey:           signingPublicKey,
 	}
 
 	if err := s.projectRepo.Create(ctx, project); err != nil {

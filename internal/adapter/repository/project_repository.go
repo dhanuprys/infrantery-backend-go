@@ -100,11 +100,12 @@ func (r *projectRepository) Update(ctx context.Context, project *domain.Project)
 	filter := bson.M{"_id": project.ID}
 	update := bson.M{
 		"$set": bson.M{
-			"name":                  project.Name,
-			"description":           project.Description,
-			"encryption_salt":       project.EncryptionSalt,
-			"encrypted_private_key": project.EncryptedPrivateKey,
-			"encryption_public_key": project.EncryptionPublicKey,
+			"name":                         project.Name,
+			"description":                  project.Description,
+			"secret_encrypted_private_key": project.SecretEncryptionPrivateKey,
+			"encryption_public_key":        project.EncryptionPublicKey,
+			"secret_signing_private_key":   project.SecretSigningPrivateKey,
+			"signing_public_key":           project.SigningPublicKey,
 		},
 	}
 	_, err := r.model.UpdateMany(ctx, filter, update)

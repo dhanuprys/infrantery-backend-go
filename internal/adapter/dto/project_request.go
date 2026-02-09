@@ -2,11 +2,12 @@ package dto
 
 // CreateProjectRequest represents the request to create a new project
 type CreateProjectRequest struct {
-	Name                string `json:"name" validate:"required,min=1,max=100"`
-	Description         string `json:"description" validate:"max=500"`
-	EncryptionSalt      string `json:"encryption_salt" validate:"required"`
-	EncryptedPrivateKey string `json:"encrypted_private_key" validate:"required"`
-	EncryptionPublicKey string `json:"encryption_public_key" validate:"required"`
+	Name                       string `json:"name" validate:"required,min=1,max=100"`
+	Description                string `json:"description" validate:"max=500"`
+	SecretEncryptionPrivateKey string `json:"secret_encrypted_private_key" validate:"required"`
+	EncryptionPublicKey        string `json:"encryption_public_key" validate:"required"`
+	SecretSigningPrivateKey    string `json:"secret_signing_private_key" validate:"required"`
+	SigningPublicKey           string `json:"signing_public_key" validate:"required"`
 }
 
 // UpdateProjectRequest represents the request to update a project

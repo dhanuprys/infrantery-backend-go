@@ -58,9 +58,10 @@ func (h *ProjectHandler) CreateProject(c *gin.Context) {
 		userID,
 		req.Name,
 		req.Description,
-		req.EncryptionSalt,
-		req.EncryptedPrivateKey,
+		req.SecretEncryptionPrivateKey,
 		req.EncryptionPublicKey,
+		req.SecretSigningPrivateKey,
+		req.SigningPublicKey,
 	)
 	if err != nil {
 		logger.Error().

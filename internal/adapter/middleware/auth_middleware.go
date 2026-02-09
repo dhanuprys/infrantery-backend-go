@@ -22,25 +22,31 @@ func NewAuthMiddleware(jwtService *service.JWTService) *AuthMiddleware {
 // RequireAuth is a middleware that validates JWT tokens
 func (m *AuthMiddleware) RequireAuth() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// Extract token from Authorization header
-		authHeader := c.GetHeader("Authorization")
-		if authHeader == "" {
+		tokenString := ""
+
+		// 1. Try getting from cookie
+		cookieToken, err := c.Cookie("access_token")
+		if err == nil && cookieToken != "" {
+			tokenString = cookieToken
+		}
+
+		// 2. Fallback to Authorization header
+		if tokenString == "" {
+			authHeader := c.GetHeader("Authorization")
+			if authHeader != "" {
+				parts := strings.SplitN(authHeader, " ", 2)
+				if len(parts) == 2 && parts[0] == "Bearer" {
+					tokenString = parts[1]
+				}
+			}
+		}
+
+		if tokenString == "" {
 			c.JSON(http.StatusUnauthorized, dto.NewAPIResponse[any](nil,
-				dto.NewErrorResponse(dto.ErrCodeUnauthorized, "Authorization header required")))
+				dto.NewErrorResponse(dto.ErrCodeUnauthorized, "Authentication required")))
 			c.Abort()
 			return
 		}
-
-		// Check for Bearer prefix
-		parts := strings.SplitN(authHeader, " ", 2)
-		if len(parts) != 2 || parts[0] != "Bearer" {
-			c.JSON(http.StatusUnauthorized, dto.NewAPIResponse[any](nil,
-				dto.NewErrorResponse(dto.ErrCodeUnauthorized, "Authorization header format must be Bearer {token}")))
-			c.Abort()
-			return
-		}
-
-		tokenString := parts[1]
 
 		// Validate token
 		claims, err := m.jwtService.ValidateToken(tokenString)

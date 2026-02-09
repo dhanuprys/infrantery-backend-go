@@ -13,14 +13,15 @@ type ProjectResponse struct {
 
 // ProjectDetailResponse includes user's permissions
 type ProjectDetailResponse struct {
-	ID                  string   `json:"id"`
-	Name                string   `json:"name"`
-	Description         string   `json:"description"`
-	EncryptionSalt      string   `json:"encryption_salt"`
-	EncryptedPrivateKey string   `json:"encrypted_private_key"`
-	EncryptionPublicKey string   `json:"encryption_public_key"`
-	Role                string   `json:"role"`
-	Permissions         []string `json:"permissions"`
+	ID                         string   `json:"id"`
+	Name                       string   `json:"name"`
+	Description                string   `json:"description"`
+	SecretEncryptionPrivateKey string   `json:"secret_encrypted_private_key"`
+	EncryptionPublicKey        string   `json:"encryption_public_key"`
+	SecretSigningPrivateKey    string   `json:"secret_signing_private_key"`
+	SigningPublicKey           string   `json:"signing_public_key"`
+	Role                       string   `json:"role"`
+	Permissions                []string `json:"permissions"`
 }
 
 // ProjectMemberResponse represents a project member
@@ -44,14 +45,15 @@ func ToProjectResponse(project *domain.Project) ProjectResponse {
 // ToProjectDetailResponse converts a project and member to detailed response
 func ToProjectDetailResponse(project *domain.Project, member *domain.ProjectMember) ProjectDetailResponse {
 	return ProjectDetailResponse{
-		ID:                  project.ID.Hex(),
-		Name:                project.Name,
-		Description:         project.Description,
-		EncryptionSalt:      project.EncryptionSalt,
-		EncryptedPrivateKey: project.EncryptedPrivateKey,
-		EncryptionPublicKey: project.EncryptionPublicKey,
-		Role:                member.Role,
-		Permissions:         member.Permissions,
+		ID:                         project.ID.Hex(),
+		Name:                       project.Name,
+		Description:                project.Description,
+		SecretEncryptionPrivateKey: project.SecretEncryptionPrivateKey,
+		EncryptionPublicKey:        project.EncryptionPublicKey,
+		SecretSigningPrivateKey:    project.SecretSigningPrivateKey,
+		SigningPublicKey:           project.SigningPublicKey,
+		Role:                       member.Role,
+		Permissions:                member.Permissions,
 	}
 }
 

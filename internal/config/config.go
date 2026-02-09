@@ -20,6 +20,9 @@ type Config struct {
 	Argon2KeyLength   uint32
 	LogLevel          string
 	Environment       string
+	CookieDomain      string
+	CookieSecure      bool
+	CookieSameSite    string
 }
 
 func Load() *Config {
@@ -37,6 +40,9 @@ func Load() *Config {
 		Argon2KeyLength:   parseUint32(getEnv("ARGON2_KEY_LENGTH", "32")),
 		LogLevel:          getEnv("LOG_LEVEL", "info"),
 		Environment:       getEnv("ENVIRONMENT", "development"),
+		CookieDomain:      getEnv("COOKIE_DOMAIN", "localhost"),
+		CookieSecure:      getEnv("COOKIE_SECURE", "false") == "true",
+		CookieSameSite:    getEnv("COOKIE_SAMESITE", "lax"),
 	}
 }
 
