@@ -1,12 +1,14 @@
 package middleware
 
 import (
+	"errors"
 	"net/http"
 	"strings"
 
 	"github.com/dhanuprys/infrantery-backend-go/internal/adapter/dto"
 	"github.com/dhanuprys/infrantery-backend-go/internal/core/service"
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt/v5"
 )
 
 type AuthMiddleware struct {
@@ -51,8 +53,13 @@ func (m *AuthMiddleware) RequireAuth() gin.HandlerFunc {
 		// Validate token
 		claims, err := m.jwtService.ValidateToken(tokenString)
 		if err != nil {
+			errCode := dto.ErrCodeInvalidToken
+			if errors.Is(err, jwt.ErrTokenExpired) {
+				errCode = dto.ErrCodeExpiredToken
+			}
+
 			c.JSON(http.StatusUnauthorized, dto.NewAPIResponse[any](nil,
-				dto.NewErrorResponse(dto.ErrCodeInvalidToken)))
+				dto.NewErrorResponse(errCode)))
 			c.Abort()
 			return
 		}

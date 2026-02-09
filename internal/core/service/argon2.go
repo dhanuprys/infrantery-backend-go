@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"fmt"
+	"strings"
 
 	"golang.org/x/crypto/argon2"
 )
@@ -48,52 +49,57 @@ func HashPassword(password string, params *Argon2Params) (string, error) {
 
 // ComparePassword verifies a password against an Argon2 hash
 func ComparePassword(password, encodedHash string) (bool, error) {
+	parts := strings.Split(encodedHash, "$")
+	if len(parts) != 6 {
+		return false, fmt.Errorf("invalid hash format")
+	}
+
+	if parts[1] != "argon2id" {
+		return false, fmt.Errorf("incompatible variant")
+	}
+
 	var version int
+	_, err := fmt.Sscanf(parts[2], "v=%d", &version)
+	if err != nil {
+		return false, err
+	}
+	if version != argon2.Version {
+		return false, fmt.Errorf("incompatible version")
+	}
+
 	var memory, iterations uint32
 	var parallelism uint8
-	var salt, hash string
-
-	_, err := fmt.Sscanf(
-		encodedHash,
-		"$argon2id$v=%d$m=%d,t=%d,p=%d$%s$%s",
-		&version,
-		&memory,
-		&iterations,
-		&parallelism,
-		&salt,
-		&hash,
-	)
+	_, err = fmt.Sscanf(parts[3], "m=%d,t=%d,p=%d", &memory, &iterations, &parallelism)
 	if err != nil {
 		return false, err
 	}
 
-	saltBytes, err := base64.RawStdEncoding.DecodeString(salt)
+	salt, err := base64.RawStdEncoding.DecodeString(parts[4])
 	if err != nil {
 		return false, err
 	}
 
-	hashBytes, err := base64.RawStdEncoding.DecodeString(hash)
+	hash, err := base64.RawStdEncoding.DecodeString(parts[5])
 	if err != nil {
 		return false, err
 	}
 
 	computedHash := argon2.IDKey(
 		[]byte(password),
-		saltBytes,
+		salt,
 		iterations,
 		memory,
 		parallelism,
-		uint32(len(hashBytes)),
+		uint32(len(hash)),
 	)
 
-	// Constant-time comparison
-	if len(computedHash) != len(hashBytes) {
+	if len(computedHash) != len(hash) {
 		return false, nil
 	}
 
 	var diff byte
 	for i := range computedHash {
-		diff |= computedHash[i] ^ hashBytes[i]
+		diff |= computedHash[i] ^ hash[i]
 	}
 
 	return diff == 0, nil
