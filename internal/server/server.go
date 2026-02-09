@@ -166,6 +166,14 @@ func (s *Server) setupDependencies() error {
 		projectMemberRepo,
 	)
 
+	breadcrumbService := service.NewBreadcrumbService(
+		projectRepo,
+		noteRepo,
+		diagramRepo,
+		nodeRepo,
+		nodeVaultRepo,
+	)
+
 	// Initialize validator
 	validator := validation.NewValidationEngine()
 
@@ -177,11 +185,12 @@ func (s *Server) setupDependencies() error {
 	diagramHandler := handler.NewDiagramHandler(diagramService, validator)
 	nodeHandler := handler.NewNodeHandler(nodeService, validator)
 	nodeVaultHandler := handler.NewNodeVaultHandler(nodeVaultService, validator)
+	breadcrumbHandler := handler.NewBreadcrumbHandler(breadcrumbService)
 
 	// Initialize middleware
 	authMiddleware := middleware.NewAuthMiddleware(jwtService)
 
-	s.setupRoutes(authMiddleware, authHandler, profileHandler, projectHandler, noteHandler, diagramHandler, nodeHandler, nodeVaultHandler)
+	s.setupRoutes(authMiddleware, authHandler, profileHandler, projectHandler, noteHandler, diagramHandler, nodeHandler, nodeVaultHandler, breadcrumbHandler)
 
 	return nil
 }
@@ -195,6 +204,7 @@ func (s *Server) setupRoutes(
 	diagramHandler *handler.DiagramHandler,
 	nodeHandler *handler.NodeHandler,
 	nodeVaultHandler *handler.NodeVaultHandler,
+	breadcrumbHandler *handler.BreadcrumbHandler,
 ) {
 	// Add middlewares
 	s.router.Use(gin.Recovery())                // Recovery middleware
@@ -248,6 +258,9 @@ func (s *Server) setupRoutes(
 				projects.GET("/:project_id", projectHandler.GetProjectDetails)
 				projects.PUT("/:project_id", projectHandler.UpdateProject)
 				projects.DELETE("/:project_id", projectHandler.DeleteProject)
+
+				// Breadcrumbs
+				projects.GET("/:project_id/breadcrumbs", breadcrumbHandler.GetBreadcrumbs)
 
 				// Project member management
 				projects.POST("/:project_id/members", projectHandler.AddMember)
