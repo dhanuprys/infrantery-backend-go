@@ -92,6 +92,7 @@ func (s *DiagramService) GetDiagram(
 func (s *DiagramService) ListDiagrams(
 	ctx context.Context,
 	projectID, userID primitive.ObjectID,
+	rootOnly bool,
 	offset, limit int,
 ) ([]*domain.Diagram, int64, error) {
 	// Check permission
@@ -99,7 +100,7 @@ func (s *DiagramService) ListDiagrams(
 		return nil, 0, err
 	}
 
-	return s.diagramRepo.FindByProjectID(ctx, projectID, offset, limit)
+	return s.diagramRepo.FindByProjectID(ctx, projectID, rootOnly, offset, limit)
 }
 
 // UpdateDiagram updates an existing diagram

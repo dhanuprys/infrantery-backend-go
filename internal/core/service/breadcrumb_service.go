@@ -8,6 +8,7 @@ import (
 	"github.com/dhanuprys/infrantery-backend-go/internal/adapter/dto"
 	"github.com/dhanuprys/infrantery-backend-go/internal/core/domain"
 	"github.com/dhanuprys/infrantery-backend-go/internal/core/port"
+	"github.com/dhanuprys/infrantery-backend-go/pkg/logger"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -72,6 +73,32 @@ func (s *BreadcrumbService) GetBreadcrumbs(ctx context.Context, projectIDStr, re
 		}, nil
 	}
 
+	// Handle list views or strict ID parsing
+	if resourceIDStr == "" {
+		switch resourceType {
+		case "note":
+			path = append(path, dto.BreadcrumbItem{
+				Type:   "note",
+				Label:  "Notes",
+				Active: true,
+			})
+			return &dto.BreadcrumbResponse{
+				ProjectID: projectIDStr,
+				Path:      path,
+			}, nil
+		case "vault":
+			path = append(path, dto.BreadcrumbItem{
+				Type:   "vault",
+				Label:  "Vault",
+				Active: true,
+			})
+			return &dto.BreadcrumbResponse{
+				ProjectID: projectIDStr,
+				Path:      path,
+			}, nil
+		}
+	}
+
 	resourceID, err := primitive.ObjectIDFromHex(resourceIDStr)
 	if err != nil {
 		return nil, ErrInvalidID
@@ -86,6 +113,8 @@ func (s *BreadcrumbService) GetBreadcrumbs(ctx context.Context, projectIDStr, re
 		return s.handleNodeBreadcrumb(ctx, projectID, resourceID, path)
 	case "vault":
 		return s.handleVaultBreadcrumb(ctx, projectID, resourceID, path)
+	case "node_vault":
+		return s.handleNodeVaultListBreadcrumb(ctx, projectID, resourceID, path)
 	default:
 		return nil, ErrInvalidResourceType
 	}
@@ -97,11 +126,12 @@ func (s *BreadcrumbService) handleNoteBreadcrumb(ctx context.Context, projectID,
 		return nil, err
 	}
 	if note == nil || note.ProjectID != projectID {
+		logger.Error().Msgf("Note not found or project mismatch: NoteID=%s, ProjectID=%s", noteID.Hex(), projectID.Hex())
 		return nil, ErrResourceNotFound
 	}
 
 	// Fetch siblings (other notes in project) - fetch up to 100 for now
-	notes, _, err := s.noteRepo.FindByProjectID(ctx, projectID, 0, 100)
+	notes, err := s.noteRepo.FindByProjectID(ctx, projectID)
 	if err != nil {
 		return nil, err
 	}
@@ -168,7 +198,8 @@ func (s *BreadcrumbService) buildDiagramPath(ctx context.Context, projectID, dia
 			return nil, err
 		}
 		if diagram == nil || diagram.ProjectID != projectID {
-			return nil, ErrResourceNotFound
+			logger.Error().Msgf("Diagram not found or project mismatch: DiagramID=%s, ProjectID=%s", currentID.Hex(), projectID.Hex())
+			return nil, fmt.Errorf("diagram not found or project mismatch (ID: %s): %w", currentID.Hex(), ErrResourceNotFound)
 		}
 
 		// Fetch siblings for this level
@@ -199,7 +230,7 @@ func (s *BreadcrumbService) getDiagramSiblings(ctx context.Context, projectID pr
 	// OR we assume existing method FindByProjectID exists.
 	// Optimization: Add FindByParentID to repo later.
 	// Fetching 100 diagrams for now
-	allDiagrams, _, err := s.diagramRepo.FindByProjectID(ctx, projectID, 0, 100)
+	allDiagrams, _, err := s.diagramRepo.FindByProjectID(ctx, projectID, false, 0, 100)
 	if err != nil {
 		return nil, err
 	}
@@ -292,6 +323,41 @@ func (s *BreadcrumbService) handleVaultBreadcrumb(ctx context.Context, projectID
 		Type:   "vault",
 		ID:     vault.ID.Hex(),
 		Label:  fmt.Sprintf("Vault (%s)", vault.Type),
+		Active: true,
+	})
+
+	return &dto.BreadcrumbResponse{
+		ProjectID: projectID.Hex(),
+		Path:      path,
+	}, nil
+}
+
+func (s *BreadcrumbService) handleNodeVaultListBreadcrumb(ctx context.Context, projectID, nodeID primitive.ObjectID, basePath []dto.BreadcrumbItem) (*dto.BreadcrumbResponse, error) {
+	node, err := s.nodeRepo.FindByID(ctx, nodeID)
+	if err != nil {
+		return nil, err
+	}
+	if node == nil {
+		logger.Error().Msgf("Node not found for breadcrumb: NodeID=%s", nodeID.Hex())
+		return nil, fmt.Errorf("node not found (ID: %s): %w", nodeID.Hex(), ErrResourceNotFound)
+	}
+
+	// Build diagram path
+	diagramPath, err := s.buildDiagramPath(ctx, projectID, node.DiagramID)
+	if err != nil {
+		return nil, err
+	}
+
+	path := append(basePath, diagramPath...)
+	path = append(path, dto.BreadcrumbItem{
+		Type:  "node",
+		ID:    node.ID.Hex(),
+		Label: "Node",
+	})
+	path = append(path, dto.BreadcrumbItem{
+		Type:   "node_vault",
+		ID:     node.ID.Hex(), // Use node ID as we are listing vault for this node
+		Label:  "Vault",
 		Active: true,
 	})
 

@@ -25,28 +25,33 @@ func NewNodeVaultHandler(service *service.NodeVaultService, validator *validatio
 }
 
 func (h *NodeVaultHandler) CreateVaultItem(c *gin.Context) {
+	// Parse params
 	nodeID := c.Param("node_id")
-	if nodeID == "" {
+	projectIDStr := c.Param("project_id")
+	if nodeID == "" || projectIDStr == "" {
 		c.JSON(http.StatusBadRequest, dto.NewAPIResponse[any](nil,
-			dto.NewErrorResponse(dto.ErrCodeInvalidRequest, "Node ID is required")))
+			dto.NewErrorResponse(dto.ErrCodeInvalidRequest, "Node ID and Project ID are required")))
 		return
 	}
 
+	// logger.Info().Str("node_id", nodeID).Str("project_id", projectIDStr).Msg("CreateVaultItem called")
+
 	var req dto.CreateNodeVaultRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
+		logger.Error().Err(err).Msg("Failed to bind JSON in CreateVaultItem")
 		c.JSON(http.StatusBadRequest, dto.NewAPIResponse[any](nil,
-			dto.NewErrorResponse(dto.ErrCodeInvalidRequest)))
+			dto.NewErrorResponse(dto.ErrCodeInvalidRequest, err.Error())))
 		return
 	}
 
 	// Get user ID from context
 	userIDStr, _ := c.Get("user_id")
 	userID, _ := primitive.ObjectIDFromHex(userIDStr.(string))
+	projectID, _ := primitive.ObjectIDFromHex(projectIDStr)
 
-	vaultItem, err := h.service.CreateVaultItem(c.Request.Context(), nodeID, userID, req)
+	vaultItem, err := h.service.CreateVaultItem(c.Request.Context(), nodeID, projectID, userID, req)
 	if err != nil {
-		if errors.Is(err, service.ErrVaultAccessDenied) || errors.Is(err, service.ErrNodeNotFound) {
-			// Careful not to leak existence if access denied, but here it's fine
+		if errors.Is(err, service.ErrVaultAccessDenied) {
 			c.JSON(http.StatusForbidden, dto.NewAPIResponse[any](nil,
 				dto.NewErrorResponse(dto.ErrCodeVaultAccessDenied)))
 			return
@@ -62,17 +67,20 @@ func (h *NodeVaultHandler) CreateVaultItem(c *gin.Context) {
 }
 
 func (h *NodeVaultHandler) ListVaultItems(c *gin.Context) {
+	// Parse params
 	nodeID := c.Param("node_id")
-	if nodeID == "" {
+	projectIDStr := c.Param("project_id")
+	if nodeID == "" || projectIDStr == "" {
 		c.JSON(http.StatusBadRequest, dto.NewAPIResponse[any](nil,
-			dto.NewErrorResponse(dto.ErrCodeInvalidRequest, "Node ID is required")))
+			dto.NewErrorResponse(dto.ErrCodeInvalidRequest, "Node ID and Project ID are required")))
 		return
 	}
 
 	userIDStr, _ := c.Get("user_id")
 	userID, _ := primitive.ObjectIDFromHex(userIDStr.(string))
+	projectID, _ := primitive.ObjectIDFromHex(projectIDStr)
 
-	items, err := h.service.ListVaultItems(c.Request.Context(), nodeID, userID)
+	items, err := h.service.ListVaultItems(c.Request.Context(), nodeID, projectID, userID)
 	if err != nil {
 		if errors.Is(err, service.ErrVaultAccessDenied) {
 			c.JSON(http.StatusForbidden, dto.NewAPIResponse[any](nil,
@@ -91,6 +99,33 @@ func (h *NodeVaultHandler) ListVaultItems(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, dto.NewAPIResponse(responses, nil))
+}
+
+func (h *NodeVaultHandler) GetVaultItem(c *gin.Context) {
+	vaultID := c.Param("vault_id")
+
+	userIDStr, _ := c.Get("user_id")
+	userID, _ := primitive.ObjectIDFromHex(userIDStr.(string))
+
+	item, err := h.service.GetVaultItem(c.Request.Context(), vaultID, userID)
+	if err != nil {
+		if errors.Is(err, service.ErrVaultAccessDenied) {
+			c.JSON(http.StatusForbidden, dto.NewAPIResponse[any](nil,
+				dto.NewErrorResponse(dto.ErrCodeVaultAccessDenied)))
+			return
+		}
+		if errors.Is(err, service.ErrVaultItemNotFound) {
+			c.JSON(http.StatusNotFound, dto.NewAPIResponse[any](nil,
+				dto.NewErrorResponse(dto.ErrCodeVaultItemNotFound)))
+			return
+		}
+		c.JSON(http.StatusInternalServerError, dto.NewAPIResponse[any](nil,
+			dto.NewErrorResponse(dto.ErrCodeInternalError)))
+		return
+	}
+
+	response := dto.ToNodeVaultResponse(item)
+	c.JSON(http.StatusOK, dto.NewAPIResponse(response, nil))
 }
 
 func (h *NodeVaultHandler) UpdateVaultItem(c *gin.Context) {

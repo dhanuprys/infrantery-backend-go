@@ -20,10 +20,10 @@ type ProjectDetailResponse struct {
 	ID                         string   `json:"id"`
 	Name                       string   `json:"name"`
 	Description                string   `json:"description"`
-	SecretEncryptionPrivateKey string   `json:"secret_encrypted_private_key"`
-	EncryptionPublicKey        string   `json:"encryption_public_key"`
-	SecretSigningPrivateKey    string   `json:"secret_signing_private_key"`
-	SigningPublicKey           string   `json:"signing_public_key"`
+	SecretEncryptionPrivateKey string   `json:"secret_encrypted_private_key,omitempty"`
+	EncryptionPublicKey        string   `json:"encryption_public_key,omitempty"`
+	SecretSigningPrivateKey    string   `json:"secret_signing_private_key,omitempty"`
+	SigningPublicKey           string   `json:"signing_public_key,omitempty"`
 	Role                       string   `json:"role"`
 	Permissions                []string `json:"permissions"`
 	CreatedAt                  string   `json:"created_at"`

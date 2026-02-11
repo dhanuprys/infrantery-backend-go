@@ -289,6 +289,7 @@ func (s *Server) setupRoutes(
 
 				// Node Vault management
 				projects.GET("/:project_id/diagrams/:diagram_id/nodes/:node_id/vault", nodeVaultHandler.ListVaultItems)
+				projects.GET("/:project_id/diagrams/:diagram_id/nodes/:node_id/vault/:vault_id", nodeVaultHandler.GetVaultItem)
 				projects.POST("/:project_id/diagrams/:diagram_id/nodes/:node_id/vault", nodeVaultHandler.CreateVaultItem)
 				projects.PUT("/:project_id/diagrams/:diagram_id/nodes/:node_id/vault/:vault_id", nodeVaultHandler.UpdateVaultItem)
 				projects.DELETE("/:project_id/diagrams/:diagram_id/nodes/:node_id/vault/:vault_id", nodeVaultHandler.DeleteVaultItem)

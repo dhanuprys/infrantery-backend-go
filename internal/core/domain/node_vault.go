@@ -11,6 +11,7 @@ type NodeVault struct {
 	NodeId primitive.ObjectID `bson:"node_id" json:"node_id"`
 	// denormalized for performance on permission checking
 	ProjectId               primitive.ObjectID `bson:"project_id" json:"project_id"`
+	Label                   string             `bson:"label" json:"label"`
 	Type                    string             `bson:"type" json:"type"`
 	EncryptedValue          *string            `bson:"encrypted_value,omitempty" json:"encrypted_value,omitempty"`
 	EncryptedValueSignature *string            `bson:"encrypted_value_signature,omitempty" json:"encrypted_value_signature,omitempty"`

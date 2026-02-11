@@ -136,10 +136,13 @@ func (h *DiagramHandler) ListDiagrams(c *gin.Context) {
 	}
 	params.Validate()
 
+	rootOnly := c.Query("root_only") == "true"
+
 	diagrams, totalCount, err := h.diagramService.ListDiagrams(
 		c.Request.Context(),
 		projectID,
 		userID,
+		rootOnly,
 		params.GetOffset(),
 		params.GetLimit(),
 	)

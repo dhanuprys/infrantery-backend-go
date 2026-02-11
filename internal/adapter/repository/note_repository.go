@@ -9,6 +9,7 @@ import (
 	"github.com/dhanuprys/infrantery-backend-go/internal/core/port"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type noteRepository struct {
@@ -41,45 +42,38 @@ func (r *noteRepository) FindByID(ctx context.Context, id primitive.ObjectID) (*
 	return r.model.FindOne(ctx, bson.M{"_id": id})
 }
 
-func (r *noteRepository) FindByProjectID(ctx context.Context, projectID primitive.ObjectID, offset, limit int) ([]*domain.Note, int64, error) {
+func (r *noteRepository) FindByProjectID(ctx context.Context, projectID primitive.ObjectID) ([]*domain.Note, error) {
 	filter := bson.M{"project_id": projectID}
 
-	// Get total count
-	allNotes, err := r.model.Find(ctx, filter)
-	if err != nil {
-		return nil, 0, err
-	}
-	totalCount := int64(len(allNotes))
+	// Sort alphabetically by file name
+	opts := options.Find().SetSort(bson.D{{Key: "file_name", Value: 1}}).SetCollation(&options.Collation{Locale: "en", Strength: 1})
 
-	// Apply pagination
-	startIdx := offset
-	endIdx := offset + limit
-	if startIdx >= len(allNotes) {
-		return []*domain.Note{}, totalCount, nil
+	// Get all notes
+	allNotes, err := r.model.Find(ctx, filter, opts)
+	if err != nil {
+		return nil, err
 	}
-	if endIdx > len(allNotes) {
-		endIdx = len(allNotes)
-	}
-	paginatedNotes := allNotes[startIdx:endIdx]
 
 	// Convert to pointers
-	result := make([]*domain.Note, 0, len(paginatedNotes))
-	for i := range paginatedNotes {
-		result = append(result, &paginatedNotes[i])
+	result := make([]*domain.Note, 0, len(allNotes))
+	for i := range allNotes {
+		result = append(result, &allNotes[i])
 	}
 
-	return result, totalCount, nil
+	return result, nil
 }
 
 func (r *noteRepository) Update(ctx context.Context, note *domain.Note) error {
 	filter := bson.M{"_id": note.ID}
-	update := bson.M{
-		"$set": bson.M{
-			"file_name":                   note.FileName,
-			"file_type":                   note.FileType,
-			"encrypted_content":           note.EncryptedContent,
-			"encrypted_content_signature": note.EncryptedContentSignature,
-		},
+	update := bson.D{
+		{Key: "$set", Value: bson.D{
+			{Key: "file_name", Value: note.FileName},
+			{Key: "type", Value: note.Type},
+			{Key: "parent_id", Value: note.ParentID},
+			{Key: "icon", Value: note.Icon},
+			{Key: "encrypted_content", Value: note.EncryptedContent},
+			{Key: "encrypted_content_signature", Value: note.EncryptedContentSignature},
+		}},
 	}
 	_, err := r.model.UpdateMany(ctx, filter, update)
 	return err

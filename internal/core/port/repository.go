@@ -44,7 +44,7 @@ type ProjectMemberRepository interface {
 type NoteRepository interface {
 	Create(ctx context.Context, note *domain.Note) error
 	FindByID(ctx context.Context, id primitive.ObjectID) (*domain.Note, error)
-	FindByProjectID(ctx context.Context, projectID primitive.ObjectID, offset, limit int) ([]*domain.Note, int64, error)
+	FindByProjectID(ctx context.Context, projectID primitive.ObjectID) ([]*domain.Note, error)
 	Update(ctx context.Context, note *domain.Note) error
 	Delete(ctx context.Context, id primitive.ObjectID) error
 	DeleteByProjectID(ctx context.Context, projectID primitive.ObjectID) error
@@ -53,7 +53,7 @@ type NoteRepository interface {
 type DiagramRepository interface {
 	Create(ctx context.Context, diagram *domain.Diagram) error
 	FindByID(ctx context.Context, id primitive.ObjectID) (*domain.Diagram, error)
-	FindByProjectID(ctx context.Context, projectID primitive.ObjectID, offset, limit int) ([]*domain.Diagram, int64, error)
+	FindByProjectID(ctx context.Context, projectID primitive.ObjectID, rootOnly bool, offset, limit int) ([]*domain.Diagram, int64, error)
 	Update(ctx context.Context, diagram *domain.Diagram) error
 	Delete(ctx context.Context, id primitive.ObjectID) error
 	DeleteByProjectID(ctx context.Context, projectID primitive.ObjectID) error

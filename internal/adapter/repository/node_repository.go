@@ -75,13 +75,13 @@ func (r *nodeRepository) FindByDiagramID(ctx context.Context, diagramID primitiv
 
 func (r *nodeRepository) Update(ctx context.Context, node *domain.Node) error {
 	filter := bson.M{"_id": node.ID}
-	update := bson.M{
-		"$set": bson.M{
-			"encrypted_readme":           node.EncryptedReadme,
-			"encrypted_readme_signature": node.EncryptedReadmeSignature,
-			"encrypted_dict":             node.EncryptedDict,
-			"encrypted_dict_signature":   node.EncryptedDictSignature,
-		},
+	update := bson.D{
+		{Key: "$set", Value: bson.D{
+			{Key: "encrypted_readme", Value: node.EncryptedReadme},
+			{Key: "encrypted_readme_signature", Value: node.EncryptedReadmeSignature},
+			{Key: "encrypted_dict", Value: node.EncryptedDict},
+			{Key: "encrypted_dict_signature", Value: node.EncryptedDictSignature},
+		}},
 	}
 	_, err := r.model.UpdateMany(ctx, filter, update)
 	return err

@@ -214,7 +214,7 @@ func (h *AuthHandler) setCookies(c *gin.Context, accessToken, refreshToken strin
 	http.SetCookie(c.Writer, &http.Cookie{
 		Name:     "access_token",
 		Value:    accessToken,
-		MaxAge:   int(h.config.JWTAccessExpiry.Seconds()),
+		MaxAge:   int(h.config.JWTAccessExpiry.Seconds()) * 2,
 		Path:     path,
 		Domain:   domain,
 		Secure:   secure,

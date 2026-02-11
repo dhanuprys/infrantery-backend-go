@@ -41,8 +41,11 @@ func (r *diagramRepository) FindByID(ctx context.Context, id primitive.ObjectID)
 	return r.model.FindOne(ctx, bson.M{"_id": id})
 }
 
-func (r *diagramRepository) FindByProjectID(ctx context.Context, projectID primitive.ObjectID, offset, limit int) ([]*domain.Diagram, int64, error) {
+func (r *diagramRepository) FindByProjectID(ctx context.Context, projectID primitive.ObjectID, rootOnly bool, offset, limit int) ([]*domain.Diagram, int64, error) {
 	filter := bson.M{"project_id": projectID}
+	if rootOnly {
+		filter["parent_diagram_id"] = nil
+	}
 
 	// Get total count
 	allDiagrams, err := r.model.Find(ctx, filter)
@@ -73,14 +76,14 @@ func (r *diagramRepository) FindByProjectID(ctx context.Context, projectID primi
 
 func (r *diagramRepository) Update(ctx context.Context, diagram *domain.Diagram) error {
 	filter := bson.M{"_id": diagram.ID}
-	update := bson.M{
-		"$set": bson.M{
-			"diagram_name":             diagram.DiagramName,
-			"description":              diagram.Description,
-			"parent_diagram_id":        diagram.ParentDiagramID,
-			"encrypted_data":           diagram.EncryptedData,
-			"encrypted_data_signature": diagram.EncryptedDataSignature,
-		},
+	update := bson.D{
+		{Key: "$set", Value: bson.D{
+			{Key: "diagram_name", Value: diagram.DiagramName},
+			{Key: "description", Value: diagram.Description},
+			{Key: "parent_diagram_id", Value: diagram.ParentDiagramID},
+			{Key: "encrypted_data", Value: diagram.EncryptedData},
+			{Key: "encrypted_data_signature", Value: diagram.EncryptedDataSignature},
+		}},
 	}
 	_, err := r.model.UpdateMany(ctx, filter, update)
 	return err

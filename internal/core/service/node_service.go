@@ -133,9 +133,13 @@ func (s *NodeService) DeleteNode(ctx context.Context, nodeIDStr string, userID p
 	node, err := s.nodeRepo.FindByID(ctx, nodeID)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
-			return ErrNodeNotFound
+			return nil // Idempotent: Node already gone
 		}
 		return err
+	}
+
+	if node == nil {
+		return nil // Idempotent: Node already gone
 	}
 
 	// Verify edit permission

@@ -57,11 +57,11 @@ func (r *nodeVaultRepository) FindByNodeID(ctx context.Context, nodeID primitive
 
 func (r *nodeVaultRepository) Update(ctx context.Context, vault *domain.NodeVault) error {
 	filter := bson.M{"_id": vault.ID}
-	update := bson.M{
-		"$set": bson.M{
-			"encrypted_value":           vault.EncryptedValue,
-			"encrypted_value_signature": vault.EncryptedValueSignature,
-		},
+	update := bson.D{
+		{Key: "$set", Value: bson.D{
+			{Key: "encrypted_value", Value: vault.EncryptedValue},
+			{Key: "encrypted_value_signature", Value: vault.EncryptedValueSignature},
+		}},
 	}
 	_, err := r.model.UpdateMany(ctx, filter, update)
 	return err

@@ -39,35 +39,21 @@ func NewNodeVaultService(
 }
 
 // CreateVaultItem creates a new vault item for a node
-func (s *NodeVaultService) CreateVaultItem(ctx context.Context, nodeIDStr string, userID primitive.ObjectID, req dto.CreateNodeVaultRequest) (*domain.NodeVault, error) {
+func (s *NodeVaultService) CreateVaultItem(ctx context.Context, nodeIDStr string, projectID primitive.ObjectID, userID primitive.ObjectID, req dto.CreateNodeVaultRequest) (*domain.NodeVault, error) {
 	nodeID, err := primitive.ObjectIDFromHex(nodeIDStr)
 	if err != nil {
 		return nil, ErrInvalidNodeID
 	}
 
-	// 1. Fetch Node to find Diagram
-	node, err := s.nodeRepo.FindByID(ctx, nodeID)
-	if err != nil {
-		if errors.Is(err, mongo.ErrNoDocuments) {
-			return nil, ErrNodeNotFound
-		}
-		return nil, err
-	}
-
-	// 2. Fetch Diagram to find Project (denormalize ProjectID into VaultItem)
-	diagram, err := s.diagramRepo.FindByID(ctx, node.DiagramID)
-	if err != nil {
-		return nil, err
-	}
-
-	// 3. Verify Edit Permission
-	if err := s.verifyProjectPermission(ctx, diagram.ProjectID, userID, "edit_vault"); err != nil {
+	// 1. Verify Edit Permission using passed ProjectID
+	if err := s.verifyProjectPermission(ctx, projectID, userID, "edit_vault"); err != nil {
 		return nil, err
 	}
 
 	vaultItem := &domain.NodeVault{
 		NodeId:                  nodeID,
-		ProjectId:               diagram.ProjectID,
+		ProjectId:               projectID,
+		Label:                   req.Label,
 		Type:                    req.Type,
 		EncryptedValue:          &req.EncryptedValue,
 		EncryptedValueSignature: &req.EncryptedValueSignature,
@@ -80,34 +66,53 @@ func (s *NodeVaultService) CreateVaultItem(ctx context.Context, nodeIDStr string
 	return vaultItem, nil
 }
 
+// GetVaultItem gets a specific vault item by ID
+func (s *NodeVaultService) GetVaultItem(ctx context.Context, vaultIDStr string, userID primitive.ObjectID) (*domain.NodeVault, error) {
+	vaultID, err := primitive.ObjectIDFromHex(vaultIDStr)
+	if err != nil {
+		return nil, ErrInvalidRequest
+	}
+
+	vaultItem, err := s.nodeVaultRepo.FindByID(ctx, vaultID)
+	if err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return nil, ErrVaultItemNotFound
+		}
+		return nil, err
+	}
+
+	// Verify Edit/View Permission (using view_vault as minimum)
+	if err := s.verifyProjectPermission(ctx, vaultItem.ProjectId, userID, "view_vault"); err != nil {
+		return nil, err
+	}
+
+	return vaultItem, nil
+}
+
 // ListVaultItems lists all vault items for a node
-func (s *NodeVaultService) ListVaultItems(ctx context.Context, nodeIDStr string, userID primitive.ObjectID) ([]*domain.NodeVault, error) {
+func (s *NodeVaultService) ListVaultItems(ctx context.Context, nodeIDStr string, projectID primitive.ObjectID, userID primitive.ObjectID) ([]*domain.NodeVault, error) {
 	nodeID, err := primitive.ObjectIDFromHex(nodeIDStr)
 	if err != nil {
 		return nil, ErrInvalidNodeID
 	}
 
-	// 1. Fetch Node
-	node, err := s.nodeRepo.FindByID(ctx, nodeID)
-	if err != nil {
-		if errors.Is(err, mongo.ErrNoDocuments) {
-			return nil, ErrNodeNotFound
-		}
+	// 1. Verify View Permission using passed ProjectID
+	if err := s.verifyProjectPermission(ctx, projectID, userID, "view_vault"); err != nil {
 		return nil, err
 	}
 
-	// 2. Fetch Diagram
-	diagram, err := s.diagramRepo.FindByID(ctx, node.DiagramID)
+	items, err := s.nodeVaultRepo.FindByNodeID(ctx, nodeID)
 	if err != nil {
 		return nil, err
 	}
 
-	// 3. Verify View Permission
-	if err := s.verifyProjectPermission(ctx, diagram.ProjectID, userID, "view_vault"); err != nil {
-		return nil, err
+	// For list view, we don't return encrypted values (lazy loading)
+	for _, item := range items {
+		item.EncryptedValue = nil
+		item.EncryptedValueSignature = nil
 	}
 
-	return s.nodeVaultRepo.FindByNodeID(ctx, nodeID)
+	return items, nil
 }
 
 // UpdateVaultItem updates a vault item
@@ -130,6 +135,9 @@ func (s *NodeVaultService) UpdateVaultItem(ctx context.Context, vaultIDStr strin
 		return nil, err
 	}
 
+	if req.Label != nil {
+		vaultItem.Label = *req.Label
+	}
 	if req.EncryptedValue != nil {
 		vaultItem.EncryptedValue = req.EncryptedValue
 	}

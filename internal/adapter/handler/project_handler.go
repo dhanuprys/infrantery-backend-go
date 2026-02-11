@@ -162,6 +162,15 @@ func (h *ProjectHandler) GetProjectDetails(c *gin.Context) {
 	}
 
 	response := dto.ToProjectDetailResponse(project, member)
+
+	// Check if secrets should be included
+	if c.Query("with_secret") != "true" {
+		response.SecretEncryptionPrivateKey = ""
+		response.EncryptionPublicKey = ""
+		response.SecretSigningPrivateKey = ""
+		response.SigningPublicKey = ""
+	}
+
 	c.JSON(http.StatusOK, dto.NewAPIResponse(response, nil))
 }
 

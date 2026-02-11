@@ -56,13 +56,27 @@ func (h *NoteHandler) CreateNote(c *gin.Context) {
 	userIDStr, _ := c.Get("user_id")
 	userID, _ := primitive.ObjectIDFromHex(userIDStr.(string))
 
+	// Parse ParentID if present
+	var parentID *primitive.ObjectID
+	if req.ParentID != nil && *req.ParentID != "" {
+		pid, err := primitive.ObjectIDFromHex(*req.ParentID)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, dto.NewAPIResponse[any](nil,
+				dto.NewErrorResponse(dto.ErrCodeInvalidRequest)))
+			return
+		}
+		parentID = &pid
+	}
+
 	// Create note
 	note, err := h.noteService.CreateNote(
 		c.Request.Context(),
 		projectID,
 		userID,
+		parentID,
+		req.Type,
 		req.FileName,
-		req.FileType,
+		req.Icon,
 		req.EncryptedContent,
 		req.EncryptedContentSignature,
 	)
@@ -116,19 +130,10 @@ func (h *NoteHandler) ListNotes(c *gin.Context) {
 	userIDStr, _ := c.Get("user_id")
 	userID, _ := primitive.ObjectIDFromHex(userIDStr.(string))
 
-	// Get pagination params
-	var params dto.PaginationParams
-	if err := c.ShouldBindQuery(&params); err != nil {
-		params = dto.DefaultPaginationParams()
-	}
-	params.Validate()
-
-	notes, totalCount, err := h.noteService.ListNotes(
+	notes, err := h.noteService.ListNotes(
 		c.Request.Context(),
 		projectID,
 		userID,
-		params.GetOffset(),
-		params.GetLimit(),
 	)
 	if err != nil {
 		if errors.Is(err, service.ErrInsufficientPermission) {
@@ -155,11 +160,12 @@ func (h *NoteHandler) ListNotes(c *gin.Context) {
 	responses := make([]dto.NoteResponse, 0, len(notes))
 	for _, note := range notes {
 		// TODO: Get actual timestamps from mgod
-		responses = append(responses, dto.ToNoteResponse(note))
+		response := dto.ToNoteResponse(note)
+		response.EncryptedContent = nil // Don't send content in list view
+		responses = append(responses, response)
 	}
 
-	paginationMeta := dto.NewPaginationMeta(params, totalCount)
-	c.JSON(http.StatusOK, dto.NewAPIResponseWithPagination(responses, &paginationMeta))
+	c.JSON(http.StatusOK, dto.NewAPIResponse(responses, nil))
 }
 
 // GetNote gets a specific note
@@ -258,7 +264,8 @@ func (h *NoteHandler) UpdateNote(c *gin.Context) {
 		noteID,
 		userID,
 		req.FileName,
-		req.FileType,
+		req.ParentID,
+		req.Icon,
 		req.EncryptedContent,
 		req.EncryptedContentSignature,
 	)

@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/dhanuprys/infrantery-backend-go/internal/adapter/dto"
@@ -45,20 +46,20 @@ func (h *BreadcrumbHandler) GetBreadcrumbs(c *gin.Context) {
 
 	breadcrumbs, err := h.service.GetBreadcrumbs(c.Request.Context(), projectID, resourceType, resourceID)
 	if err != nil {
-		switch err {
-		case service.ErrInvalidID:
+		if errors.Is(err, service.ErrInvalidID) {
 			c.JSON(http.StatusBadRequest, dto.NewAPIResponse[any](nil,
 				dto.NewErrorResponse(dto.ErrCodeInvalidRequest, "Invalid ID format")))
-		case service.ErrProjectNotFound:
+		} else if errors.Is(err, service.ErrProjectNotFound) {
 			c.JSON(http.StatusNotFound, dto.NewAPIResponse[any](nil,
 				dto.NewErrorResponse(dto.ErrCodeProjectNotFound)))
-		case service.ErrResourceNotFound:
+		} else if errors.Is(err, service.ErrResourceNotFound) {
+			// Return the wrapped error message for debugging
 			c.JSON(http.StatusNotFound, dto.NewAPIResponse[any](nil,
-				dto.NewErrorResponse(dto.ErrCodePageNotFound, "Resource not found"))) // Reuse PageNotFound or create specific
-		case service.ErrInvalidResourceType:
+				dto.NewErrorResponse(dto.ErrCodePageNotFound, err.Error())))
+		} else if errors.Is(err, service.ErrInvalidResourceType) {
 			c.JSON(http.StatusBadRequest, dto.NewAPIResponse[any](nil,
 				dto.NewErrorResponse(dto.ErrCodeInvalidRequest, "Invalid resource type")))
-		default:
+		} else {
 			logger.Error().Err(err).Msg("Failed to get breadcrumbs")
 			c.JSON(http.StatusInternalServerError, dto.NewAPIResponse[any](nil,
 				dto.NewErrorResponse(dto.ErrCodeInternalError)))

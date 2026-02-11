@@ -98,15 +98,15 @@ func (r *projectRepository) FindByUserID(ctx context.Context, userID primitive.O
 
 func (r *projectRepository) Update(ctx context.Context, project *domain.Project) error {
 	filter := bson.M{"_id": project.ID}
-	update := bson.M{
-		"$set": bson.M{
-			"name":                         project.Name,
-			"description":                  project.Description,
-			"secret_encrypted_private_key": project.SecretEncryptionPrivateKey,
-			"encryption_public_key":        project.EncryptionPublicKey,
-			"secret_signing_private_key":   project.SecretSigningPrivateKey,
-			"signing_public_key":           project.SigningPublicKey,
-		},
+	update := bson.D{
+		{Key: "$set", Value: bson.D{
+			{Key: "name", Value: project.Name},
+			{Key: "description", Value: project.Description},
+			{Key: "secret_encrypted_private_key", Value: project.SecretEncryptionPrivateKey},
+			{Key: "encryption_public_key", Value: project.EncryptionPublicKey},
+			{Key: "secret_signing_private_key", Value: project.SecretSigningPrivateKey},
+			{Key: "signing_public_key", Value: project.SigningPublicKey},
+		}},
 	}
 	_, err := r.model.UpdateMany(ctx, filter, update)
 	return err
