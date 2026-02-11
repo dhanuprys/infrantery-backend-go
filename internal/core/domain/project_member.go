@@ -22,6 +22,26 @@ type ProjectMember struct {
 	Permissions []string           `bson:"permissions" json:"permissions"`
 	Role        string             `bson:"role" json:"role"` // Optional preset name
 
+	// User key pair
+	PublicKey string `bson:"public_key" json:"public_key"`
+	// encrypted + "<delimiter>" + salt + "<delimiter>" + iv
+	EncryptedPrivateKey string `bson:"encrypted_private_key" json:"encrypted_private_key"`
+
+	Keyrings []ProjectMemberKeyring `bson:"keyrings,omitempty" json:"keyrings"`
+
 	CreatedAt time.Time `bson:"created_at,omitempty" json:"created_at"`
 	UpdatedAt time.Time `bson:"updated_at,omitempty" json:"updated_at"`
+}
+
+type ProjectMemberKeyring struct {
+	Epoch string `bson:"epoch" json:"epoch"`
+
+	// Encryption keys for all project data (diagrams, notes, vaults)
+	// encrypted + "<delimiter>" + salt + "<delimiter>" + iv
+	SecretPassphrase string `bson:"secret_passphrase" json:"secret_passphrase"`
+
+	// Signing keys for all project data (diagrams, notes, vaults)
+	// encrypted + "<delimiter>" + salt + "<delimiter" + iv
+	SecretSigningPrivateKey string `bson:"secret_signing_private_key" json:"secret_signing_private_key"`
+	SigningPublicKey        string `bson:"signing_public_key" json:"signing_public_key"`
 }

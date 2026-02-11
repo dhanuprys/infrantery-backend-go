@@ -11,34 +11,41 @@ type ProjectResponse struct {
 	ID          string `json:"id"`
 	Name        string `json:"name"`
 	Description string `json:"description"`
+	KeyEpoch    string `json:"key_epoch"`
 	CreatedAt   string `json:"created_at"`
 	UpdatedAt   string `json:"updated_at"`
 }
 
 // ProjectDetailResponse includes user's permissions
 type ProjectDetailResponse struct {
-	ID                         string   `json:"id"`
-	Name                       string   `json:"name"`
-	Description                string   `json:"description"`
-	SecretEncryptionPrivateKey string   `json:"secret_encrypted_private_key,omitempty"`
-	EncryptionPublicKey        string   `json:"encryption_public_key,omitempty"`
-	SecretSigningPrivateKey    string   `json:"secret_signing_private_key,omitempty"`
-	SigningPublicKey           string   `json:"signing_public_key,omitempty"`
-	Role                       string   `json:"role"`
-	Permissions                []string `json:"permissions"`
-	CreatedAt                  string   `json:"created_at"`
-	UpdatedAt                  string   `json:"updated_at"`
+	ID                      string                        `json:"id"`
+	Name                    string                        `json:"name"`
+	Description             string                        `json:"description"`
+	KeyEpoch                string                        `json:"key_epoch"` // Changed from int64 to string
+	Role                    string                        `json:"role"`
+	Permissions             []string                      `json:"permissions"`
+	UserEncryptedPrivateKey string                        `json:"user_encrypted_private_key"`
+	Keyrings                []domain.ProjectMemberKeyring `json:"keyrings"`
+	CreatedAt               string                        `json:"created_at"`
+	UpdatedAt               string                        `json:"updated_at"`
+}
+
+// ProjectChunkResponse represents a project chunk
+type ProjectChunkResponse struct {
+	ID       string `json:"id"`
+	KeyEpoch string `json:"key_epoch"`
 }
 
 // ProjectMemberResponse represents a project member
 type ProjectMemberResponse struct {
-	UserID      string   `json:"user_id"`
-	UserName    string   `json:"user_name"`
-	UserEmail   string   `json:"user_email"`
-	Role        string   `json:"role"`
-	Permissions []string `json:"permissions"`
-	CreatedAt   string   `json:"created_at"`
-	UpdatedAt   string   `json:"updated_at"`
+	UserID      string                        `json:"user_id"`
+	UserName    string                        `json:"user_name"`
+	UserEmail   string                        `json:"user_email"`
+	Role        string                        `json:"role"`
+	Permissions []string                      `json:"permissions"`
+	Keyrings    []domain.ProjectMemberKeyring `json:"keyrings"`
+	CreatedAt   string                        `json:"created_at"`
+	UpdatedAt   string                        `json:"updated_at"`
 }
 
 // ToProjectResponse converts a project to basic response
@@ -47,6 +54,7 @@ func ToProjectResponse(project *domain.Project) ProjectResponse {
 		ID:          project.ID.Hex(),
 		Name:        project.Name,
 		Description: project.Description,
+		KeyEpoch:    project.KeyEpoch,
 		CreatedAt:   project.CreatedAt.Format(time.RFC3339),
 		UpdatedAt:   project.UpdatedAt.Format(time.RFC3339),
 	}
@@ -55,17 +63,21 @@ func ToProjectResponse(project *domain.Project) ProjectResponse {
 // ToProjectDetailResponse converts a project and member to detailed response
 func ToProjectDetailResponse(project *domain.Project, member *domain.ProjectMember) ProjectDetailResponse {
 	return ProjectDetailResponse{
-		ID:                         project.ID.Hex(),
-		Name:                       project.Name,
-		Description:                project.Description,
-		SecretEncryptionPrivateKey: project.SecretEncryptionPrivateKey,
-		EncryptionPublicKey:        project.EncryptionPublicKey,
-		SecretSigningPrivateKey:    project.SecretSigningPrivateKey,
-		SigningPublicKey:           project.SigningPublicKey,
-		Role:                       member.Role,
-		Permissions:                member.Permissions,
-		CreatedAt:                  project.CreatedAt.Format(time.RFC3339),
-		UpdatedAt:                  project.UpdatedAt.Format(time.RFC3339),
+		ID:          project.ID.Hex(),
+		Name:        project.Name,
+		Description: project.Description,
+		KeyEpoch:    project.KeyEpoch,
+		Role:        member.Role,
+		Permissions: member.Permissions,
+		CreatedAt:   project.CreatedAt.Format(time.RFC3339),
+		UpdatedAt:   project.UpdatedAt.Format(time.RFC3339),
+	}
+}
+
+func ToProjectChunkResponse(project *domain.Project) ProjectChunkResponse {
+	return ProjectChunkResponse{
+		ID:       project.ID.Hex(),
+		KeyEpoch: project.KeyEpoch,
 	}
 }
 
@@ -77,6 +89,7 @@ func ToProjectMemberResponse(member *domain.ProjectMember, user *domain.User) Pr
 		UserEmail:   user.Email,
 		Role:        member.Role,
 		Permissions: member.Permissions,
+		Keyrings:    member.Keyrings,
 		CreatedAt:   member.CreatedAt.Format(time.RFC3339),
 		UpdatedAt:   member.UpdatedAt.Format(time.RFC3339),
 	}

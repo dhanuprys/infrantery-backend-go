@@ -102,10 +102,6 @@ func (r *projectRepository) Update(ctx context.Context, project *domain.Project)
 		{Key: "$set", Value: bson.D{
 			{Key: "name", Value: project.Name},
 			{Key: "description", Value: project.Description},
-			{Key: "secret_encrypted_private_key", Value: project.SecretEncryptionPrivateKey},
-			{Key: "encryption_public_key", Value: project.EncryptionPublicKey},
-			{Key: "secret_signing_private_key", Value: project.SecretSigningPrivateKey},
-			{Key: "signing_public_key", Value: project.SigningPublicKey},
 		}},
 	}
 	_, err := r.model.UpdateMany(ctx, filter, update)

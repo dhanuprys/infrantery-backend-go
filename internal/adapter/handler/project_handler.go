@@ -58,10 +58,11 @@ func (h *ProjectHandler) CreateProject(c *gin.Context) {
 		userID,
 		req.Name,
 		req.Description,
-		req.SecretEncryptionPrivateKey,
-		req.EncryptionPublicKey,
+		req.SecretPassphrase,
 		req.SecretSigningPrivateKey,
 		req.SigningPublicKey,
+		req.UserPublicKey,
+		req.UserEncryptedPrivateKey,
 	)
 	if err != nil {
 		logger.Error().
@@ -161,14 +162,18 @@ func (h *ProjectHandler) GetProjectDetails(c *gin.Context) {
 		return
 	}
 
+	if c.Query("chunk") == "true" {
+		response := dto.ToProjectChunkResponse(project)
+		c.JSON(http.StatusOK, dto.NewAPIResponse(response, nil))
+		return
+	}
+
 	response := dto.ToProjectDetailResponse(project, member)
 
-	// Check if secrets should be included
-	if c.Query("with_secret") != "true" {
-		response.SecretEncryptionPrivateKey = ""
-		response.EncryptionPublicKey = ""
-		response.SecretSigningPrivateKey = ""
-		response.SigningPublicKey = ""
+	// Include keyrings if requested
+	if c.Query("with_secret") == "true" {
+		response.UserEncryptedPrivateKey = member.EncryptedPrivateKey
+		response.Keyrings = member.Keyrings
 	}
 
 	c.JSON(http.StatusOK, dto.NewAPIResponse(response, nil))

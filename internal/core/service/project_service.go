@@ -67,17 +67,15 @@ func (s *ProjectService) CreateProject(
 	ctx context.Context,
 	userID primitive.ObjectID,
 	name, description string,
-	secretEncryptionPrivateKey, encryptionPublicKey string,
+	secretPassphrase string,
 	secretSigningPrivateKey, signingPublicKey string,
+	userPublicKey string, userEncryptedPrivateKey string,
 ) (*domain.Project, error) {
 	project := &domain.Project{
-		ID:                         primitive.NewObjectID(),
-		Name:                       name,
-		Description:                description,
-		SecretEncryptionPrivateKey: secretEncryptionPrivateKey,
-		EncryptionPublicKey:        encryptionPublicKey,
-		SecretSigningPrivateKey:    secretSigningPrivateKey,
-		SigningPublicKey:           signingPublicKey,
+		ID:          primitive.NewObjectID(),
+		Name:        name,
+		Description: description,
+		KeyEpoch:    "0",
 	}
 
 	if err := s.projectRepo.Create(ctx, project); err != nil {
@@ -86,10 +84,20 @@ func (s *ProjectService) CreateProject(
 
 	// Add creator as owner
 	member := &domain.ProjectMember{
-		ProjectID:   project.ID,
-		UserID:      userID,
-		Role:        "owner",
-		Permissions: RolePresets["owner"],
+		ProjectID:           project.ID,
+		UserID:              userID,
+		Role:                "owner",
+		Permissions:         RolePresets["owner"],
+		PublicKey:           userPublicKey,
+		EncryptedPrivateKey: userEncryptedPrivateKey,
+		Keyrings: []domain.ProjectMemberKeyring{
+			{
+				Epoch:                   "0",
+				SecretPassphrase:        secretPassphrase,
+				SecretSigningPrivateKey: secretSigningPrivateKey,
+				SigningPublicKey:        signingPublicKey,
+			},
+		},
 	}
 
 	if err := s.memberRepo.Create(ctx, member); err != nil {

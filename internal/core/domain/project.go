@@ -11,15 +11,7 @@ type Project struct {
 	Name        string             `bson:"name" json:"name"`
 	Description string             `bson:"description" json:"description"`
 
-	// Encryption keys for all project data (diagrams, notes, vaults)
-	// encrypted + "<delimiter>" + salt + "<delimiter>" + iv
-	SecretEncryptionPrivateKey string `bson:"secret_encrypted_private_key" json:"secret_encrypted_private_key"`
-	EncryptionPublicKey        string `bson:"encryption_public_key" json:"encryption_public_key"`
-
-	// Signing keys for all project data (diagrams, notes, vaults)
-	// encrypted + "<delimiter>" + salt + "<delimiter" + iv
-	SecretSigningPrivateKey string `bson:"secret_signing_private_key" json:"secret_signing_private_key"`
-	SigningPublicKey        string `bson:"signing_public_key" json:"signing_public_key"`
+	KeyEpoch string `bson:"key_epoch" json:"key_epoch"`
 
 	CreatedAt time.Time `bson:"created_at,omitempty" json:"created_at"`
 	UpdatedAt time.Time `bson:"updated_at,omitempty" json:"updated_at"`
