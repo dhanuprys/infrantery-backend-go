@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/dhanuprys/infrantery-backend-go/internal/adapter/dto"
+	"github.com/dhanuprys/infrantery-backend-go/internal/core/domain"
 	"github.com/dhanuprys/infrantery-backend-go/internal/core/port"
 	"github.com/dhanuprys/infrantery-backend-go/internal/core/service"
 	"github.com/dhanuprys/infrantery-backend-go/pkg/logger"
@@ -561,5 +562,252 @@ func (h *ProjectHandler) RemoveMember(c *gin.Context) {
 
 	c.JSON(http.StatusOK, dto.NewAPIResponse(map[string]string{
 		"message": "Member removed successfully",
+	}, nil))
+}
+
+// CreateInvitation creates a new project invitation
+func (h *ProjectHandler) CreateInvitation(c *gin.Context) {
+	projectIDStr := c.Param("project_id")
+	projectID, err := primitive.ObjectIDFromHex(projectIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, dto.NewAPIResponse[any](nil,
+			dto.NewErrorResponse(dto.ErrCodeInvalidRequest)))
+		return
+	}
+
+	var req dto.CreateInvitationRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, dto.NewAPIResponse[any](nil,
+			dto.NewErrorResponse(dto.ErrCodeInvalidRequest)))
+		return
+	}
+
+	if validationErrors := h.validator.ValidateStruct(req); validationErrors != nil {
+		c.JSON(http.StatusBadRequest, dto.NewAPIResponse[any](nil,
+			dto.NewValidationErrorResponse(validationErrors)))
+		return
+	}
+
+	userIDStr, _ := c.Get("user_id")
+	userID, _ := primitive.ObjectIDFromHex(userIDStr.(string))
+
+	var inviteeUserID primitive.ObjectID
+	if req.InviteeUserID != "" {
+		inviteeUserID, err = primitive.ObjectIDFromHex(req.InviteeUserID)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, dto.NewAPIResponse[any](nil,
+				dto.NewErrorResponse(dto.ErrCodeInvalidRequest)))
+			return
+		}
+	}
+
+	invitation, err := h.projectService.CreateInvitation(
+		c.Request.Context(),
+		projectID,
+		userID,
+		inviteeUserID,
+		req.Role,
+		req.Permissions,
+		req.EncryptedKeyrings,
+	)
+	if err != nil {
+		if errors.Is(err, service.ErrInsufficientPermission) {
+			c.JSON(http.StatusForbidden, dto.NewAPIResponse[any](nil,
+				dto.NewErrorResponse(dto.ErrCodeInsufficientPermission)))
+			return
+		}
+		logger.Error().Err(err).
+			Str("project_id", projectIDStr).
+			Msg("Failed to create invitation")
+		c.JSON(http.StatusInternalServerError, dto.NewAPIResponse[any](nil,
+			dto.NewErrorResponse(dto.ErrCodeInternalError)))
+		return
+	}
+
+	// Return invitation ID (the password was already shown to the inviter on the client)
+	c.JSON(http.StatusCreated, dto.NewAPIResponse(map[string]string{
+		"invitation_id": invitation.ID.Hex(),
+	}, nil))
+}
+
+// GetProjectInvitations lists invitations for a project
+func (h *ProjectHandler) GetProjectInvitations(c *gin.Context) {
+	projectIDStr := c.Param("project_id")
+	projectID, err := primitive.ObjectIDFromHex(projectIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, dto.NewAPIResponse[any](nil,
+			dto.NewErrorResponse(dto.ErrCodeInvalidRequest)))
+		return
+	}
+
+	userIDStr, _ := c.Get("user_id")
+	userID, _ := primitive.ObjectIDFromHex(userIDStr.(string))
+
+	var params dto.PaginationParams
+	if err := c.ShouldBindQuery(&params); err != nil {
+		params = dto.DefaultPaginationParams()
+	}
+	params.Validate()
+
+	invitations, totalCount, err := h.projectService.GetProjectInvitations(
+		c.Request.Context(),
+		projectID,
+		userID,
+		params.GetOffset(),
+		params.GetLimit(),
+	)
+	if err != nil {
+		if errors.Is(err, service.ErrInsufficientPermission) {
+			c.JSON(http.StatusForbidden, dto.NewAPIResponse[any](nil,
+				dto.NewErrorResponse(dto.ErrCodeInsufficientPermission)))
+			return
+		}
+		logger.Error().Err(err).
+			Str("project_id", projectIDStr).
+			Msg("Failed to get project invitations")
+		c.JSON(http.StatusInternalServerError, dto.NewAPIResponse[any](nil,
+			dto.NewErrorResponse(dto.ErrCodeInternalError)))
+		return
+	}
+
+	responses := make([]dto.InvitationResponse, 0, len(invitations))
+	for _, inv := range invitations {
+		inviter, _ := h.userRepo.FindByID(c.Request.Context(), inv.InviterUserID)
+		inviterName := ""
+		if inviter != nil {
+			inviterName = inviter.Name
+		}
+
+		inviteeName := ""
+		if !inv.InviteeUserID.IsZero() {
+			invitee, _ := h.userRepo.FindByID(c.Request.Context(), inv.InviteeUserID)
+			if invitee != nil {
+				inviteeName = invitee.Name
+			}
+		}
+		responses = append(responses, dto.ToInvitationResponse(inv, "", inviterName, inviteeName))
+	}
+
+	paginationMeta := dto.NewPaginationMeta(params, totalCount)
+	c.JSON(http.StatusOK, dto.NewAPIResponseWithPagination(responses, &paginationMeta))
+}
+
+// RevokeInvitation revokes a pending invitation
+func (h *ProjectHandler) RevokeInvitation(c *gin.Context) {
+	projectIDStr := c.Param("project_id")
+	projectID, err := primitive.ObjectIDFromHex(projectIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, dto.NewAPIResponse[any](nil,
+			dto.NewErrorResponse(dto.ErrCodeInvalidRequest)))
+		return
+	}
+
+	invitationIDStr := c.Param("invitation_id")
+	invitationID, err := primitive.ObjectIDFromHex(invitationIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, dto.NewAPIResponse[any](nil,
+			dto.NewErrorResponse(dto.ErrCodeInvalidRequest)))
+		return
+	}
+
+	userIDStr, _ := c.Get("user_id")
+	userID, _ := primitive.ObjectIDFromHex(userIDStr.(string))
+
+	err = h.projectService.RevokeInvitation(
+		c.Request.Context(),
+		projectID,
+		userID,
+		invitationID,
+	)
+	if err != nil {
+		if errors.Is(err, service.ErrInsufficientPermission) {
+			c.JSON(http.StatusForbidden, dto.NewAPIResponse[any](nil,
+				dto.NewErrorResponse(dto.ErrCodeInsufficientPermission)))
+			return
+		}
+		if errors.Is(err, service.ErrInvitationNotFound) {
+			c.JSON(http.StatusNotFound, dto.NewAPIResponse[any](nil,
+				dto.NewErrorResponse(dto.ErrCodeInvitationNotFound)))
+			return
+		}
+		if errors.Is(err, service.ErrInvitationAlreadyAccepted) {
+			c.JSON(http.StatusBadRequest, dto.NewAPIResponse[any](nil,
+				dto.NewErrorResponse(dto.ErrCodeInvitationAlreadyAccepted)))
+			return
+		}
+		logger.Error().Err(err).
+			Str("project_id", projectIDStr).
+			Str("invitation_id", invitationIDStr).
+			Msg("Failed to revoke invitation")
+		c.JSON(http.StatusInternalServerError, dto.NewAPIResponse[any](nil,
+			dto.NewErrorResponse(dto.ErrCodeInternalError)))
+		return
+	}
+
+	c.JSON(http.StatusOK, dto.NewAPIResponse(map[string]string{
+		"message": "Invitation revoked successfully",
+	}, nil))
+}
+
+// RotateProjectKeys rotates the project keys
+func (h *ProjectHandler) RotateProjectKeys(c *gin.Context) {
+	projectIDStr := c.Param("project_id")
+	projectID, err := primitive.ObjectIDFromHex(projectIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, dto.NewAPIResponse[any](nil,
+			dto.NewErrorResponse(dto.ErrCodeInvalidRequest)))
+		return
+	}
+
+	var req dto.RotateProjectKeyRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, dto.NewAPIResponse[any](nil,
+			dto.NewErrorResponse(dto.ErrCodeInvalidRequest)))
+		return
+	}
+
+	if validationErrors := h.validator.ValidateStruct(req); validationErrors != nil {
+		c.JSON(http.StatusBadRequest, dto.NewAPIResponse[any](nil,
+			dto.NewValidationErrorResponse(validationErrors)))
+		return
+	}
+
+	userIDStr, _ := c.Get("user_id")
+	userID, _ := primitive.ObjectIDFromHex(userIDStr.(string))
+
+	// Map DTO to Domain
+	domainUpdates := make([]domain.MemberKeyringUpdate, len(req.Updates))
+	for i, u := range req.Updates {
+		domainUpdates[i] = domain.MemberKeyringUpdate{
+			UserID:              u.UserID,
+			EncryptedPassphrase: u.EncryptedPassphrase,
+			EncryptedSigningKey: u.EncryptedSigningKey,
+			SigningPublicKey:    u.SigningPublicKey,
+		}
+	}
+
+	err = h.projectService.RotateProjectKeys(
+		c.Request.Context(),
+		projectID,
+		userID,
+		req.NewKeyEpoch,
+		domainUpdates,
+	)
+	if err != nil {
+		if errors.Is(err, service.ErrInsufficientPermission) {
+			c.JSON(http.StatusForbidden, dto.NewAPIResponse[any](nil,
+				dto.NewErrorResponse(dto.ErrCodeInsufficientPermission)))
+			return
+		}
+		logger.Error().Err(err).
+			Str("project_id", projectIDStr).
+			Msg("Failed to rotate project keys")
+		c.JSON(http.StatusInternalServerError, dto.NewAPIResponse[any](nil,
+			dto.NewErrorResponse(dto.ErrCodeInternalError)))
+		return
+	}
+
+	c.JSON(http.StatusOK, dto.NewAPIResponse(map[string]string{
+		"message": "Project keys rotated successfully",
 	}, nil))
 }

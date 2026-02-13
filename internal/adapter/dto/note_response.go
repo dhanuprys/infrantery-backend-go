@@ -15,7 +15,7 @@ type NoteResponse struct {
 	FileName                  string  `json:"file_name"`
 	Icon                      string  `json:"icon"`
 	EncryptedContent          *string `json:"encrypted_content,omitempty"`
-	EncryptedContentSignature string  `json:"encrypted_content_signature"`
+	EncryptedContentSignature *string `json:"encrypted_content_signature,omitempty"`
 	CreatedAt                 string  `json:"created_at"`
 	UpdatedAt                 string  `json:"updated_at"`
 }

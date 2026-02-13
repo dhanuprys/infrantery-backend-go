@@ -16,3 +16,10 @@ type Project struct {
 	CreatedAt time.Time `bson:"created_at,omitempty" json:"created_at"`
 	UpdatedAt time.Time `bson:"updated_at,omitempty" json:"updated_at"`
 }
+
+type MemberKeyringUpdate struct {
+	UserID              string
+	EncryptedPassphrase string
+	EncryptedSigningKey string
+	SigningPublicKey    string
+}

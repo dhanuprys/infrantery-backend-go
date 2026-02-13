@@ -111,3 +111,29 @@ func (r *userRepository) ExistsByUsername(ctx context.Context, username string, 
 	}
 	return result != nil, nil
 }
+
+func (r *userRepository) SearchUsers(ctx context.Context, query string, limit int) ([]*domain.User, error) {
+	filter := bson.M{
+		"$or": bson.A{
+			bson.M{"name": bson.M{"$regex": primitive.Regex{Pattern: query, Options: "i"}}},
+			bson.M{"email": bson.M{"$regex": primitive.Regex{Pattern: query, Options: "i"}}},
+			bson.M{"username": bson.M{"$regex": primitive.Regex{Pattern: query, Options: "i"}}},
+		},
+	}
+
+	results, err := r.model.Find(ctx, filter)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(results) > limit {
+		results = results[:limit]
+	}
+
+	users := make([]*domain.User, 0, len(results))
+	for i := range results {
+		users = append(users, &results[i])
+	}
+
+	return users, nil
+}

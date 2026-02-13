@@ -77,11 +77,12 @@ func (r *projectMemberRepository) Update(ctx context.Context, member *domain.Pro
 		"project_id": member.ProjectID,
 		"user_id":    member.UserID,
 	}
-	update := bson.M{
-		"$set": bson.M{
-			"permissions": member.Permissions,
-			"role":        member.Role,
-		},
+	update := bson.D{
+		{Key: "$set", Value: bson.D{
+			{Key: "permissions", Value: member.Permissions},
+			{Key: "role", Value: member.Role},
+			{Key: "keyrings", Value: member.Keyrings},
+		}},
 	}
 	_, err := r.model.UpdateMany(ctx, filter, update)
 	return err

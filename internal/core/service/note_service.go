@@ -43,7 +43,7 @@ func (s *NoteService) CreateNote(
 	fileName string,
 	icon string,
 	encryptedContent *string,
-	signature string,
+	signature *string,
 ) (*domain.Note, error) {
 	// Check permission
 	if err := s.hasPermission(ctx, projectID, userID, domain.PermissionEditNote); err != nil {
@@ -157,7 +157,7 @@ func (s *NoteService) UpdateNote(
 		note.EncryptedContent = encryptedContent
 	}
 	if signature != nil {
-		note.EncryptedContentSignature = *signature
+		note.EncryptedContentSignature = signature
 	}
 
 	if err := s.noteRepo.Update(ctx, note); err != nil {

@@ -162,6 +162,7 @@ func (h *NoteHandler) ListNotes(c *gin.Context) {
 		// TODO: Get actual timestamps from mgod
 		response := dto.ToNoteResponse(note)
 		response.EncryptedContent = nil // Don't send content in list view
+		response.EncryptedContentSignature = nil
 		responses = append(responses, response)
 	}
 

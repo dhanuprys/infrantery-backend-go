@@ -146,3 +146,14 @@ func (s *UserService) ChangePassword(ctx context.Context, userID primitive.Objec
 
 	return nil
 }
+
+// SearchUsers searches for users by name, email, or username
+func (s *UserService) SearchUsers(ctx context.Context, query string, limit int) ([]*domain.User, error) {
+	if query == "" {
+		return []*domain.User{}, nil
+	}
+	if limit <= 0 || limit > 20 {
+		limit = 10
+	}
+	return s.userRepo.SearchUsers(ctx, query, limit)
+}

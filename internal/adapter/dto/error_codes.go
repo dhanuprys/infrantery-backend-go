@@ -25,6 +25,12 @@ const (
 	ErrCodeMemberAlreadyExists    = "MEMBER_ALREADY_EXISTS"
 	ErrCodeCannotRemoveOwner      = "CANNOT_REMOVE_OWNER"
 
+	// Invitation errors
+	ErrCodeInvitationNotFound        = "INVITATION_NOT_FOUND"
+	ErrCodeInvitationAlreadyAccepted = "INVITATION_ALREADY_ACCEPTED"
+	ErrCodeInvitationExpired         = "INVITATION_EXPIRED"
+	ErrCodeInvitationInvalidPassword = "INVITATION_INVALID_PASSWORD"
+
 	// Note errors
 	ErrCodeNoteNotFound     = "NOTE_NOT_FOUND"
 	ErrCodeNoteAccessDenied = "NOTE_ACCESS_DENIED"
@@ -79,6 +85,11 @@ var ErrorMessages = map[string]string{
 	ErrCodeMemberNotFound:         "Member not found",
 	ErrCodeMemberAlreadyExists:    "Member already exists in this project",
 	ErrCodeCannotRemoveOwner:      "Cannot remove the last owner from project",
+
+	ErrCodeInvitationNotFound:        "Invitation not found",
+	ErrCodeInvitationAlreadyAccepted: "Invitation has already been accepted",
+	ErrCodeInvitationExpired:         "Invitation has expired",
+	ErrCodeInvitationInvalidPassword: "Invalid invitation password",
 
 	ErrCodeNoteNotFound:     "Note not found",
 	ErrCodeNoteAccessDenied: "Access denied to this note",

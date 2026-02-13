@@ -6,17 +6,22 @@ import (
 
 	"github.com/dhanuprys/infrantery-backend-go/internal/core/domain"
 	"github.com/dhanuprys/infrantery-backend-go/internal/core/port"
+	"github.com/dhanuprys/infrantery-backend-go/pkg/logger"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
 var (
-	ErrProjectNotFound        = errors.New("project not found")
-	ErrProjectAccessDenied    = errors.New("project access denied")
-	ErrInsufficientPermission = errors.New("insufficient permission")
-	ErrMemberNotFound         = errors.New("member not found")
-	ErrMemberAlreadyExists    = errors.New("member already exists")
-	ErrCannotRemoveOwner      = errors.New("cannot remove last owner")
+	ErrProjectNotFound           = errors.New("project not found")
+	ErrProjectAccessDenied       = errors.New("project access denied")
+	ErrInsufficientPermission    = errors.New("insufficient permission")
+	ErrMemberNotFound            = errors.New("member not found")
+	ErrMemberAlreadyExists       = errors.New("member already exists")
+	ErrCannotRemoveOwner         = errors.New("cannot remove last owner")
+	ErrInvitationNotFound        = errors.New("invitation not found")
+	ErrInvitationAlreadyAccepted = errors.New("invitation already accepted")
+	ErrInvitationExpired         = errors.New("invitation expired")
+	ErrInvitationInvalidPassword = errors.New("invalid invitation password")
 )
 
 // RolePresets defines default permissions for each role
@@ -39,11 +44,13 @@ var RolePresets = map[string][]string{
 }
 
 type ProjectService struct {
-	projectRepo port.ProjectRepository
-	memberRepo  port.ProjectMemberRepository
-	userRepo    port.UserRepository
-	noteRepo    port.NoteRepository
-	diagramRepo port.DiagramRepository
+	projectRepo    port.ProjectRepository
+	memberRepo     port.ProjectMemberRepository
+	userRepo       port.UserRepository
+	noteRepo       port.NoteRepository
+	diagramRepo    port.DiagramRepository
+	invitationRepo port.InvitationRepository
+	argon2Params   *Argon2Params
 }
 
 func NewProjectService(
@@ -52,13 +59,17 @@ func NewProjectService(
 	userRepo port.UserRepository,
 	noteRepo port.NoteRepository,
 	diagramRepo port.DiagramRepository,
+	invitationRepo port.InvitationRepository,
+	argon2Params *Argon2Params,
 ) *ProjectService {
 	return &ProjectService{
-		projectRepo: projectRepo,
-		memberRepo:  memberRepo,
-		userRepo:    userRepo,
-		noteRepo:    noteRepo,
-		diagramRepo: diagramRepo,
+		projectRepo:    projectRepo,
+		memberRepo:     memberRepo,
+		userRepo:       userRepo,
+		noteRepo:       noteRepo,
+		diagramRepo:    diagramRepo,
+		invitationRepo: invitationRepo,
+		argon2Params:   argon2Params,
 	}
 }
 
@@ -356,4 +367,296 @@ func (s *ProjectService) GetUserPermissions(
 	}
 
 	return member.Permissions, nil
+}
+
+// CreateInvitation creates a new project invitation
+func (s *ProjectService) CreateInvitation(
+	ctx context.Context,
+	projectID, inviterUserID, inviteeUserID primitive.ObjectID,
+	role string,
+	permissions []string,
+	encryptedKeyrings string,
+) (*domain.Invitation, error) {
+	// Check permission
+	if err := s.HasPermission(ctx, projectID, inviterUserID, domain.PermissionManageProject); err != nil {
+		return nil, err
+	}
+
+	// Fetch project to get current KeyEpoch
+	project, err := s.projectRepo.FindByID(ctx, projectID)
+	if err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return nil, ErrProjectNotFound
+		}
+		return nil, err
+	}
+
+	// Check for existing pending invitation for this user in this project
+	// and mark it as expired to prevent duplicates but keep history
+	if !inviteeUserID.IsZero() {
+		existingInv, err := s.invitationRepo.FindByProjectAndInvitee(ctx, projectID, inviteeUserID)
+		if err == nil && existingInv != nil {
+			// Found existing, mark as expired
+			existingInv.Status = domain.InvitationStatusExpired
+			_ = s.invitationRepo.Update(ctx, existingInv)
+		}
+	}
+
+	invitation := &domain.Invitation{
+		ID:                primitive.NewObjectID(),
+		ProjectID:         projectID,
+		InviterUserID:     inviterUserID,
+		InviteeUserID:     inviteeUserID,
+		Role:              role,
+		Permissions:       permissions,
+		EncryptedKeyrings: encryptedKeyrings,
+		KeyEpoch:          project.KeyEpoch,
+		Status:            domain.InvitationStatusPending,
+	}
+
+	result, err := s.invitationRepo.Create(ctx, invitation)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
+// GetInvitation fetches an invitation by ID
+func (s *ProjectService) GetInvitation(
+	ctx context.Context,
+	invitationID primitive.ObjectID,
+) (*domain.Invitation, error) {
+	invitation, err := s.invitationRepo.FindByID(ctx, invitationID)
+	if err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return nil, ErrInvitationNotFound
+		}
+		return nil, err
+	}
+
+	return invitation, nil
+}
+
+// AcceptInvitation accepts an invitation and creates a project member
+func (s *ProjectService) AcceptInvitation(
+	ctx context.Context,
+	invitationID, acceptingUserID primitive.ObjectID,
+	keyrings []domain.ProjectMemberKeyring,
+	publicKey, encryptedPrivateKey string,
+) (primitive.ObjectID, error) {
+	// Fetch invitation
+	invitation, err := s.invitationRepo.FindByID(ctx, invitationID)
+	if err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return primitive.NilObjectID, ErrInvitationNotFound
+		}
+		return primitive.NilObjectID, err
+	}
+
+	// Check status
+	if invitation.Status == domain.InvitationStatusAccepted {
+		return primitive.NilObjectID, ErrInvitationAlreadyAccepted
+	}
+	if invitation.Status == domain.InvitationStatusExpired {
+		return primitive.NilObjectID, ErrInvitationExpired
+	}
+
+	// Fetch project to check KeyEpoch
+	project, err := s.projectRepo.FindByID(ctx, invitation.ProjectID)
+	if err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return primitive.NilObjectID, ErrProjectNotFound
+		}
+		return primitive.NilObjectID, err
+	}
+
+	// Verify KeyEpoch matches
+	if project.KeyEpoch != invitation.KeyEpoch {
+		// Mark as expired
+		invitation.Status = domain.InvitationStatusExpired
+		_ = s.invitationRepo.Update(ctx, invitation)
+		return primitive.NilObjectID, ErrInvitationExpired
+	}
+
+	// Check if user is already a member
+	existingMember, err := s.memberRepo.FindByProjectAndUser(ctx, invitation.ProjectID, acceptingUserID)
+	if err == nil && existingMember != nil {
+		// User is already a member. Check if this is a key rotation (new epoch)
+		// Check if member already has keyring for this epoch
+		hasEpoch := false
+		for _, k := range existingMember.Keyrings {
+			if k.Epoch == invitation.KeyEpoch {
+				hasEpoch = true
+				break
+			}
+		}
+
+		if hasEpoch {
+			return primitive.NilObjectID, ErrMemberAlreadyExists
+		}
+
+		// Update member with new keyrings
+		existingMember.Keyrings = append(existingMember.Keyrings, keyrings...)
+		if err := s.memberRepo.Update(ctx, existingMember); err != nil {
+			return primitive.NilObjectID, err
+		}
+
+		// Mark invitation as accepted
+		invitation.Status = domain.InvitationStatusAccepted
+		if err := s.invitationRepo.Update(ctx, invitation); err != nil {
+			return invitation.ProjectID, nil
+		}
+
+		return invitation.ProjectID, nil
+	}
+
+	if err != nil && !errors.Is(err, mongo.ErrNoDocuments) {
+		return primitive.NilObjectID, err
+	}
+
+	// Create project member
+	member := &domain.ProjectMember{
+		ProjectID:           invitation.ProjectID,
+		UserID:              acceptingUserID,
+		Role:                invitation.Role,
+		Permissions:         invitation.Permissions,
+		Keyrings:            keyrings,
+		PublicKey:           publicKey,
+		EncryptedPrivateKey: encryptedPrivateKey,
+	}
+
+	if err := s.memberRepo.Create(ctx, member); err != nil {
+		return primitive.NilObjectID, err
+	}
+
+	// Mark invitation as accepted
+	invitation.Status = domain.InvitationStatusAccepted
+	if err := s.invitationRepo.Update(ctx, invitation); err != nil {
+		// Non-critical: member was already created
+		return invitation.ProjectID, nil
+	}
+
+	// Cleanup: Mark any other pending invitations for this user in this project as expired
+	// This handles cases where multiple invitations might have been created (rare but possible safely)
+	// or simply cleans up state.
+	if !acceptingUserID.IsZero() {
+		otherInv, err := s.invitationRepo.FindByProjectAndInvitee(ctx, invitation.ProjectID, acceptingUserID)
+		if err == nil && otherInv != nil && otherInv.ID != invitation.ID {
+			otherInv.Status = domain.InvitationStatusExpired
+			_ = s.invitationRepo.Update(ctx, otherInv)
+		}
+	}
+
+	return invitation.ProjectID, nil
+}
+
+// GetProjectInvitations lists invitations for a project
+func (s *ProjectService) GetProjectInvitations(
+	ctx context.Context,
+	projectID, userID primitive.ObjectID,
+	offset, limit int,
+) ([]*domain.Invitation, int64, error) {
+	// Check permission
+	if err := s.HasPermission(ctx, projectID, userID, domain.PermissionManageProject); err != nil {
+		return nil, 0, err
+	}
+
+	return s.invitationRepo.FindByProjectID(ctx, projectID, offset, limit)
+}
+
+// GetUserInvitations lists invitations for the current user
+func (s *ProjectService) GetUserInvitations(
+	ctx context.Context,
+	userID primitive.ObjectID,
+	offset, limit int,
+) ([]*domain.Invitation, int64, error) {
+	return s.invitationRepo.FindByInviteeID(ctx, userID, offset, limit)
+}
+
+// RevokeInvitation revokes a pending invitation
+func (s *ProjectService) RevokeInvitation(
+	ctx context.Context,
+	projectID, userID, invitationID primitive.ObjectID,
+) error {
+	// Check permission
+	if err := s.HasPermission(ctx, projectID, userID, domain.PermissionManageProject); err != nil {
+		return err
+	}
+
+	// Verify invitation exists and belongs to this project
+	invitation, err := s.invitationRepo.FindByID(ctx, invitationID)
+	if err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return ErrInvitationNotFound
+		}
+		return err
+	}
+
+	if invitation.ProjectID != projectID {
+		return ErrInvitationNotFound
+	}
+
+	if invitation.Status != domain.InvitationStatusPending {
+		return ErrInvitationAlreadyAccepted
+	}
+
+	return s.invitationRepo.Delete(ctx, invitationID)
+}
+
+// RotateProjectKeys updates the project key epoch and adds new keyrings for members
+func (s *ProjectService) RotateProjectKeys(
+	ctx context.Context,
+	projectID, userID primitive.ObjectID,
+	newKeyEpoch string,
+	updates []domain.MemberKeyringUpdate,
+) error {
+	// Check permission (Owner only for security critical operations)
+	if err := s.HasPermission(ctx, projectID, userID, domain.PermissionManageProject); err != nil {
+		return err
+	}
+
+	// 1. Update Project Epoch
+	project, err := s.projectRepo.FindByID(ctx, projectID)
+	if err != nil {
+		return err
+	}
+	project.KeyEpoch = newKeyEpoch
+	if err := s.projectRepo.Update(ctx, project); err != nil {
+		return err
+	}
+
+	// 2. Update Members
+	// We do this in a loop. ideally this should be a transaction but for now separate updates are okay
+	// as long as the project epoch is updated first.
+	// If a member update fails, they just won't be able to access new data until re-invited/fixed,
+	// but security is maintained because the project epoch has changed.
+	for _, update := range updates {
+		memberUserID, err := primitive.ObjectIDFromHex(update.UserID)
+		if err != nil {
+			continue // Skip invalid user IDs
+		}
+
+		member, err := s.memberRepo.FindByProjectAndUser(ctx, projectID, memberUserID)
+		if err != nil {
+			continue // Member might have been removed concurrently, skip
+		}
+
+		// Append new keyring
+		newKeyring := domain.ProjectMemberKeyring{
+			Epoch:                   newKeyEpoch,
+			SecretPassphrase:        update.EncryptedPassphrase,
+			SecretSigningPrivateKey: update.EncryptedSigningKey,
+			SigningPublicKey:        update.SigningPublicKey,
+		}
+		member.Keyrings = append(member.Keyrings, newKeyring)
+
+		if err := s.memberRepo.Update(ctx, member); err != nil {
+			logger.Error().Err(err).Str("project_id", projectID.Hex()).Str("user_id", update.UserID).Msg("Failed to update member keyring")
+		} else {
+			logger.Info().Str("project_id", projectID.Hex()).Str("user_id", update.UserID).Msg("Updated member keyring")
+		}
+	}
+
+	return nil
 }

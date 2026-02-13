@@ -15,6 +15,17 @@ type UserRepository interface {
 	Update(ctx context.Context, user *domain.User) error
 	ExistsByEmail(ctx context.Context, email string, excludeUserID primitive.ObjectID) (bool, error)
 	ExistsByUsername(ctx context.Context, username string, excludeUserID primitive.ObjectID) (bool, error)
+	SearchUsers(ctx context.Context, query string, limit int) ([]*domain.User, error)
+}
+
+type InvitationRepository interface {
+	Create(ctx context.Context, invitation *domain.Invitation) (*domain.Invitation, error)
+	FindByID(ctx context.Context, id primitive.ObjectID) (*domain.Invitation, error)
+	FindByProjectID(ctx context.Context, projectID primitive.ObjectID, offset, limit int) ([]*domain.Invitation, int64, error)
+	FindByInviteeID(ctx context.Context, inviteeUserID primitive.ObjectID, offset, limit int) ([]*domain.Invitation, int64, error)
+	FindByProjectAndInvitee(ctx context.Context, projectID, inviteeUserID primitive.ObjectID) (*domain.Invitation, error)
+	Update(ctx context.Context, invitation *domain.Invitation) error
+	Delete(ctx context.Context, id primitive.ObjectID) error
 }
 
 type RefreshTokenRepository interface {

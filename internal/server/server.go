@@ -104,6 +104,11 @@ func (s *Server) setupDependencies() error {
 		return err
 	}
 
+	invitationRepo, err := repository.NewInvitationRepository("invitations")
+	if err != nil {
+		return err
+	}
+
 	// Initialize services
 	jwtService := service.NewJWTService(
 		s.cfg.JWTSecret,
@@ -138,6 +143,8 @@ func (s *Server) setupDependencies() error {
 		userRepo,
 		noteRepo,
 		diagramRepo,
+		invitationRepo,
+		argon2Params,
 	)
 
 	noteService := service.NewNoteService(
@@ -181,6 +188,7 @@ func (s *Server) setupDependencies() error {
 	authHandler := handler.NewAuthHandler(authService, validator, s.cfg)
 	profileHandler := handler.NewProfileHandler(userService, validator)
 	projectHandler := handler.NewProjectHandler(projectService, userRepo, validator)
+	invitationHandler := handler.NewInvitationHandler(projectService, userRepo, projectRepo, validator)
 	noteHandler := handler.NewNoteHandler(noteService, validator)
 	diagramHandler := handler.NewDiagramHandler(diagramService, validator)
 	nodeHandler := handler.NewNodeHandler(nodeService, validator)
@@ -190,7 +198,7 @@ func (s *Server) setupDependencies() error {
 	// Initialize middleware
 	authMiddleware := middleware.NewAuthMiddleware(jwtService)
 
-	s.setupRoutes(authMiddleware, authHandler, profileHandler, projectHandler, noteHandler, diagramHandler, nodeHandler, nodeVaultHandler, breadcrumbHandler)
+	s.setupRoutes(authMiddleware, authHandler, profileHandler, projectHandler, invitationHandler, noteHandler, diagramHandler, nodeHandler, nodeVaultHandler, breadcrumbHandler)
 
 	return nil
 }
@@ -200,6 +208,7 @@ func (s *Server) setupRoutes(
 	authHandler *handler.AuthHandler,
 	profileHandler *handler.ProfileHandler,
 	projectHandler *handler.ProjectHandler,
+	invitationHandler *handler.InvitationHandler,
 	noteHandler *handler.NoteHandler,
 	diagramHandler *handler.DiagramHandler,
 	nodeHandler *handler.NodeHandler,
@@ -268,6 +277,14 @@ func (s *Server) setupRoutes(
 				projects.PUT("/:project_id/members/:user_id", projectHandler.UpdateMember)
 				projects.DELETE("/:project_id/members/:user_id", projectHandler.RemoveMember)
 
+				// Key Rotation
+				projects.POST("/:project_id/keys/rotate", projectHandler.RotateProjectKeys)
+
+				// Invitation management (project-scoped)
+				projects.POST("/:project_id/invitations", projectHandler.CreateInvitation)
+				projects.GET("/:project_id/invitations", projectHandler.GetProjectInvitations)
+				projects.DELETE("/:project_id/invitations/:invitation_id", projectHandler.RevokeInvitation)
+
 				// Note management
 				projects.POST("/:project_id/notes", noteHandler.CreateNote)
 				projects.GET("/:project_id/notes", noteHandler.ListNotes)
@@ -294,6 +311,14 @@ func (s *Server) setupRoutes(
 				projects.PUT("/:project_id/diagrams/:diagram_id/nodes/:node_id/vault/:vault_id", nodeVaultHandler.UpdateVaultItem)
 				projects.DELETE("/:project_id/diagrams/:diagram_id/nodes/:node_id/vault/:vault_id", nodeVaultHandler.DeleteVaultItem)
 			}
+
+			// Invitation routes (non-project-scoped, for invitee)
+			protected.GET("/invitations", invitationHandler.ListUserInvitations)
+			protected.GET("/invitations/:invitation_id", invitationHandler.GetInvitation)
+			protected.POST("/invitations/:invitation_id/accept", invitationHandler.AcceptInvitation)
+
+			// User search
+			protected.GET("/users/search", invitationHandler.SearchUsers)
 		}
 	}
 }

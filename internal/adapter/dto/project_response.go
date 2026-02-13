@@ -43,6 +43,7 @@ type ProjectMemberResponse struct {
 	UserEmail   string                        `json:"user_email"`
 	Role        string                        `json:"role"`
 	Permissions []string                      `json:"permissions"`
+	PublicKey   string                        `json:"public_key"`
 	Keyrings    []domain.ProjectMemberKeyring `json:"keyrings"`
 	CreatedAt   string                        `json:"created_at"`
 	UpdatedAt   string                        `json:"updated_at"`
@@ -89,8 +90,57 @@ func ToProjectMemberResponse(member *domain.ProjectMember, user *domain.User) Pr
 		UserEmail:   user.Email,
 		Role:        member.Role,
 		Permissions: member.Permissions,
+		PublicKey:   member.PublicKey,
 		Keyrings:    member.Keyrings,
 		CreatedAt:   member.CreatedAt.Format(time.RFC3339),
 		UpdatedAt:   member.UpdatedAt.Format(time.RFC3339),
+	}
+}
+
+// InvitationResponse represents an invitation
+type InvitationResponse struct {
+	ID                string   `json:"id"`
+	ProjectID         string   `json:"project_id"`
+	ProjectName       string   `json:"project_name"`
+	InviterName       string   `json:"inviter_name"`
+	InviteeName       string   `json:"invitee_name,omitempty"`
+	Role              string   `json:"role"`
+	Permissions       []string `json:"permissions"`
+	EncryptedKeyrings string   `json:"encrypted_keyrings"`
+	Status            string   `json:"status"`
+	CreatedAt         string   `json:"created_at"`
+}
+
+// ToInvitationResponse converts an invitation to response
+func ToInvitationResponse(invitation *domain.Invitation, projectName, inviterName, inviteeName string) InvitationResponse {
+	return InvitationResponse{
+		ID:                invitation.ID.Hex(),
+		ProjectID:         invitation.ProjectID.Hex(),
+		ProjectName:       projectName,
+		InviterName:       inviterName,
+		InviteeName:       inviteeName,
+		Role:              invitation.Role,
+		Permissions:       invitation.Permissions,
+		EncryptedKeyrings: invitation.EncryptedKeyrings,
+		Status:            invitation.Status,
+		CreatedAt:         invitation.CreatedAt.Format(time.RFC3339),
+	}
+}
+
+// UserSearchResponse represents a user search result
+type UserSearchResponse struct {
+	ID       string `json:"id"`
+	Name     string `json:"name"`
+	Email    string `json:"email"`
+	Username string `json:"username"`
+}
+
+// ToUserSearchResponse converts a user to search response
+func ToUserSearchResponse(user *domain.User) UserSearchResponse {
+	return UserSearchResponse{
+		ID:       user.ID.Hex(),
+		Name:     user.Name,
+		Email:    user.Email,
+		Username: user.Username,
 	}
 }
