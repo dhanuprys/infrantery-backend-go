@@ -65,6 +65,7 @@ type DiagramRepository interface {
 	Create(ctx context.Context, diagram *domain.Diagram) error
 	FindByID(ctx context.Context, id primitive.ObjectID) (*domain.Diagram, error)
 	FindByProjectID(ctx context.Context, projectID primitive.ObjectID, rootOnly bool, offset, limit int) ([]*domain.Diagram, int64, error)
+	FindAllByProjectID(ctx context.Context, projectID primitive.ObjectID) ([]*domain.Diagram, error)
 	Update(ctx context.Context, diagram *domain.Diagram) error
 	Delete(ctx context.Context, id primitive.ObjectID) error
 	DeleteByProjectID(ctx context.Context, projectID primitive.ObjectID) error
@@ -74,6 +75,7 @@ type NodeRepository interface {
 	Create(ctx context.Context, node *domain.Node) error
 	FindByID(ctx context.Context, id primitive.ObjectID) (*domain.Node, error)
 	FindByDiagramID(ctx context.Context, diagramID primitive.ObjectID, offset, limit int) ([]*domain.Node, int64, error)
+	FindByDiagramIDs(ctx context.Context, diagramIDs []primitive.ObjectID) ([]*domain.Node, error)
 	Update(ctx context.Context, node *domain.Node) error
 	Delete(ctx context.Context, id primitive.ObjectID) error
 	DeleteByDiagramID(ctx context.Context, diagramID primitive.ObjectID) error
@@ -83,6 +85,7 @@ type NodeVaultRepository interface {
 	Create(ctx context.Context, vault *domain.NodeVault) error
 	FindByID(ctx context.Context, id primitive.ObjectID) (*domain.NodeVault, error)
 	FindByNodeID(ctx context.Context, nodeID primitive.ObjectID) ([]*domain.NodeVault, error)
+	FindByProjectID(ctx context.Context, projectID primitive.ObjectID) ([]*domain.NodeVault, error)
 	Update(ctx context.Context, vault *domain.NodeVault) error
 	Delete(ctx context.Context, id primitive.ObjectID) error
 	DeleteByNodeID(ctx context.Context, nodeID primitive.ObjectID) error

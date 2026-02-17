@@ -16,6 +16,6 @@ type NodeVault struct {
 	EncryptedValue          *string            `bson:"encrypted_value,omitempty" json:"encrypted_value,omitempty"`
 	EncryptedValueSignature *string            `bson:"encrypted_value_signature,omitempty" json:"encrypted_value_signature,omitempty"`
 
-	CreatedAt time.Time `bson:"created_at,omitempty" json:"created_at"`
-	UpdatedAt time.Time `bson:"updated_at,omitempty" json:"updated_at"`
+	CreatedAt time.Time `bson:"createdAt,omitempty" json:"created_at"`
+	UpdatedAt time.Time `bson:"updatedAt,omitempty" json:"updated_at"`
 }

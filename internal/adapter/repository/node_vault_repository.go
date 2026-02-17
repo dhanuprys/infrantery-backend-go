@@ -55,6 +55,19 @@ func (r *nodeVaultRepository) FindByNodeID(ctx context.Context, nodeID primitive
 	return result, nil
 }
 
+func (r *nodeVaultRepository) FindByProjectID(ctx context.Context, projectID primitive.ObjectID) ([]*domain.NodeVault, error) {
+	vaults, err := r.model.Find(ctx, bson.M{"project_id": projectID})
+	if err != nil {
+		return nil, err
+	}
+
+	result := make([]*domain.NodeVault, 0, len(vaults))
+	for i := range vaults {
+		result = append(result, &vaults[i])
+	}
+	return result, nil
+}
+
 func (r *nodeVaultRepository) Update(ctx context.Context, vault *domain.NodeVault) error {
 	filter := bson.M{"_id": vault.ID}
 	update := bson.D{

@@ -73,6 +73,24 @@ func (r *nodeRepository) FindByDiagramID(ctx context.Context, diagramID primitiv
 	return result, totalCount, nil
 }
 
+func (r *nodeRepository) FindByDiagramIDs(ctx context.Context, diagramIDs []primitive.ObjectID) ([]*domain.Node, error) {
+	if len(diagramIDs) == 0 {
+		return []*domain.Node{}, nil
+	}
+
+	filter := bson.M{"diagram_id": bson.M{"$in": diagramIDs}}
+	allNodes, err := r.model.Find(ctx, filter)
+	if err != nil {
+		return nil, err
+	}
+
+	result := make([]*domain.Node, 0, len(allNodes))
+	for i := range allNodes {
+		result = append(result, &allNodes[i])
+	}
+	return result, nil
+}
+
 func (r *nodeRepository) Update(ctx context.Context, node *domain.Node) error {
 	filter := bson.M{"_id": node.ID}
 	update := bson.D{

@@ -12,6 +12,6 @@ type RefreshToken struct {
 	ExpiresAt time.Time          `bson:"expires_at" json:"expires_at"`
 	IsRevoked bool               `bson:"is_revoked" json:"is_revoked"`
 
-	CreatedAt time.Time `bson:"created_at,omitempty" json:"created_at"`
-	UpdatedAt time.Time `bson:"updated_at,omitempty" json:"updated_at"`
+	CreatedAt time.Time `bson:"createdAt,omitempty" json:"created_at"`
+	UpdatedAt time.Time `bson:"updatedAt,omitempty" json:"updated_at"`
 }

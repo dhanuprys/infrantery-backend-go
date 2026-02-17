@@ -52,6 +52,12 @@ const (
 	ErrCodeVaultAccessDenied    = "VAULT_ACCESS_DENIED"
 	ErrCodeInvalidVaultItemData = "INVALID_VAULT_ITEM_DATA"
 
+	// Backup errors
+	ErrCodeBackupTooLarge         = "BACKUP_TOO_LARGE"
+	ErrCodeBackupInvalidFormat    = "BACKUP_INVALID_FORMAT"
+	ErrCodeBackupVersionMismatch  = "BACKUP_VERSION_MISMATCH"
+	ErrCodeBackupDecryptionFailed = "BACKUP_DECRYPTION_FAILED"
+
 	// Validation errors
 	ErrCodeValidationFailed = "VALIDATION_FAILED"
 	ErrCodeInvalidRequest   = "INVALID_REQUEST"
@@ -103,6 +109,15 @@ var ErrorMessages = map[string]string{
 	ErrCodeNodeAccessDenied: "Access denied to this node",
 	ErrCodeInvalidNodeData:  "Invalid node data provided",
 	ErrCodeInvalidNodeID:    "Invalid node ID format",
+
+	ErrCodeVaultItemNotFound:    "Vault item not found",
+	ErrCodeVaultAccessDenied:    "Access denied to this vault",
+	ErrCodeInvalidVaultItemData: "Invalid vault item data provided",
+
+	ErrCodeBackupTooLarge:         "Backup file exceeds maximum allowed size",
+	ErrCodeBackupInvalidFormat:    "Invalid backup file format",
+	ErrCodeBackupVersionMismatch:  "Unsupported backup version",
+	ErrCodeBackupDecryptionFailed: "Decryption failed: wrong password or corrupted file",
 
 	ErrCodeValidationFailed: "Validation failed",
 	ErrCodeInvalidRequest:   "Invalid request body",

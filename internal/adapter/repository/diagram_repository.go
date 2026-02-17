@@ -74,6 +74,19 @@ func (r *diagramRepository) FindByProjectID(ctx context.Context, projectID primi
 	return result, totalCount, nil
 }
 
+func (r *diagramRepository) FindAllByProjectID(ctx context.Context, projectID primitive.ObjectID) ([]*domain.Diagram, error) {
+	diagrams, err := r.model.Find(ctx, bson.M{"project_id": projectID})
+	if err != nil {
+		return nil, err
+	}
+
+	result := make([]*domain.Diagram, 0, len(diagrams))
+	for i := range diagrams {
+		result = append(result, &diagrams[i])
+	}
+	return result, nil
+}
+
 func (r *diagramRepository) Update(ctx context.Context, diagram *domain.Diagram) error {
 	filter := bson.M{"_id": diagram.ID}
 	update := bson.D{

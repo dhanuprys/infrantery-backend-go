@@ -181,6 +181,17 @@ func (s *Server) setupDependencies() error {
 		nodeVaultRepo,
 	)
 
+	backupService := service.NewBackupService(
+		projectService,
+		projectRepo,
+		projectMemberRepo,
+		noteRepo,
+		diagramRepo,
+		nodeRepo,
+		nodeVaultRepo,
+		argon2Params,
+	)
+
 	// Initialize validator
 	validator := validation.NewValidationEngine()
 
@@ -194,11 +205,12 @@ func (s *Server) setupDependencies() error {
 	nodeHandler := handler.NewNodeHandler(nodeService, validator)
 	nodeVaultHandler := handler.NewNodeVaultHandler(nodeVaultService, validator)
 	breadcrumbHandler := handler.NewBreadcrumbHandler(breadcrumbService)
+	backupHandler := handler.NewBackupHandler(backupService, validator)
 
 	// Initialize middleware
 	authMiddleware := middleware.NewAuthMiddleware(jwtService)
 
-	s.setupRoutes(authMiddleware, authHandler, profileHandler, projectHandler, invitationHandler, noteHandler, diagramHandler, nodeHandler, nodeVaultHandler, breadcrumbHandler)
+	s.setupRoutes(authMiddleware, authHandler, profileHandler, projectHandler, invitationHandler, noteHandler, diagramHandler, nodeHandler, nodeVaultHandler, breadcrumbHandler, backupHandler)
 
 	return nil
 }
@@ -214,6 +226,7 @@ func (s *Server) setupRoutes(
 	nodeHandler *handler.NodeHandler,
 	nodeVaultHandler *handler.NodeVaultHandler,
 	breadcrumbHandler *handler.BreadcrumbHandler,
+	backupHandler *handler.BackupHandler,
 ) {
 	// Add middlewares
 	s.router.Use(gin.Recovery())                // Recovery middleware
@@ -223,7 +236,7 @@ func (s *Server) setupRoutes(
 	s.router.Use(cors.New(cors.Config{
 		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Length", "Content-Type", "Authorization"},
-		ExposeHeaders:    []string{"Content-Length"},
+		ExposeHeaders:    []string{"Content-Length", "Content-Disposition"},
 		AllowCredentials: true,
 		MaxAge:           12 * time.Hour,
 		AllowOriginFunc: func(origin string) bool {
@@ -310,6 +323,10 @@ func (s *Server) setupRoutes(
 				projects.POST("/:project_id/diagrams/:diagram_id/nodes/:node_id/vault", nodeVaultHandler.CreateVaultItem)
 				projects.PUT("/:project_id/diagrams/:diagram_id/nodes/:node_id/vault/:vault_id", nodeVaultHandler.UpdateVaultItem)
 				projects.DELETE("/:project_id/diagrams/:diagram_id/nodes/:node_id/vault/:vault_id", nodeVaultHandler.DeleteVaultItem)
+
+				// Backup & Restore
+				projects.POST("/:project_id/backup", backupHandler.CreateBackup)
+				projects.POST("/restore", backupHandler.RestoreBackup)
 			}
 
 			// Invitation routes (non-project-scoped, for invitee)

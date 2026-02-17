@@ -78,7 +78,7 @@ func (h *NoteHandler) CreateNote(c *gin.Context) {
 		req.FileName,
 		req.Icon,
 		req.EncryptedContent,
-		req.EncryptedContentSignature,
+		&req.EncryptedContentSignature,
 	)
 	if err != nil {
 		if errors.Is(err, service.ErrInsufficientPermission) {

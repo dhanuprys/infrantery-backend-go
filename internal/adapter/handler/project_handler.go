@@ -103,6 +103,7 @@ func (h *ProjectHandler) GetUserProjects(c *gin.Context) {
 		params.GetOffset(),
 		params.GetLimit(),
 	)
+
 	if err != nil {
 		logger.Error().
 			Err(err).

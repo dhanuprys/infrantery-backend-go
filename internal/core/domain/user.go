@@ -13,6 +13,6 @@ type User struct {
 	Password string             `bson:"password" json:"-"` // Never return password in JSON
 	Email    string             `bson:"email" json:"email"`
 
-	CreatedAt time.Time `bson:"created_at,omitempty" json:"created_at"`
-	UpdatedAt time.Time `bson:"updated_at,omitempty" json:"updated_at"`
+	CreatedAt time.Time `bson:"createdAt,omitempty" json:"created_at"`
+	UpdatedAt time.Time `bson:"updatedAt,omitempty" json:"updated_at"`
 }
