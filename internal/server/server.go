@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/Lyearn/mgod"
+	brotli "github.com/anargu/gin-brotli"
 	"github.com/dhanuprys/infrantery-backend-go/internal/adapter/dto"
 	"github.com/dhanuprys/infrantery-backend-go/internal/adapter/handler"
 	"github.com/dhanuprys/infrantery-backend-go/internal/adapter/middleware"
@@ -229,8 +230,9 @@ func (s *Server) setupRoutes(
 	backupHandler *handler.BackupHandler,
 ) {
 	// Add middlewares
-	s.router.Use(gin.Recovery())                // Recovery middleware
-	s.router.Use(middleware.LoggerMiddleware()) // Our custom logger middleware
+	s.router.Use(gin.Recovery())                           // Recovery middleware
+	s.router.Use(middleware.LoggerMiddleware())            // Our custom logger middleware
+	s.router.Use(brotli.Brotli(brotli.DefaultCompression)) // Use brotli for better compression
 
 	// CORS configuration
 	s.router.Use(cors.New(cors.Config{

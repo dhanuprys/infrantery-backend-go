@@ -19,6 +19,7 @@ require (
 require (
 	dario.cat/mergo v1.0.2 // indirect
 	github.com/air-verse/air v1.64.5 // indirect
+	github.com/anargu/gin-brotli v0.0.0-20220116052358-12bf532d5267 // indirect
 	github.com/andybalholm/brotli v1.2.0 // indirect
 	github.com/bep/godartsass/v2 v2.5.0 // indirect
 	github.com/bep/golibsass v1.2.0 // indirect
